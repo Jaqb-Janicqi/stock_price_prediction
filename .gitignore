@@ -1,0 +1,8 @@
+# ignore data
+data/
+
+# ignore all cache
+**/__pycache__/
+
+# ignore lightning_logs
+lightning_logs
