@@ -2,7 +2,6 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
-from multiprocessing import Process
 import os
 from typing import List
 
@@ -17,15 +16,21 @@ def check_tensor_shapes(tensors):
 
 
 class PandasDataset(Dataset):
-    def __init__(self, dataframe: pd.DataFrame, window_size: int, target_size: int):
+    def __init__(self, dataframe: pd.DataFrame, window_size: int, target_size: int, cols=['Close'], target_cols=['Close'], normalize=False):
         self.dataframe = dataframe
         self.window_size = window_size
         self.target_size = target_size
+        self.cols = cols
+        self.target_cols = target_cols
+        self.should_normalize = normalize
+        if self.should_normalize:
+            self.normalize()
 
     def __getitem__(self, index: int) -> tuple:
-        x = self.dataframe.iloc[index:index+self.window_size].values
+        # select cols for x, and target_cols for y
+        x = self.dataframe.iloc[index:index+self.window_size][self.cols].values
         y = self.dataframe.iloc[index+self.window_size:index +
-                                self.window_size+self.target_size].values
+                                self.window_size+self.target_size][self.target_cols].values
         return np.array(x), np.array(y)
 
     def __len__(self) -> int:
@@ -34,13 +39,17 @@ class PandasDataset(Dataset):
     def collate_fn(self, batch) -> List[torch.Tensor]:
         return [torch.tensor(np.array(x)).float() for x in zip(*batch)]
 
+    def normalize(self):
+        self.dataframe = (self.dataframe - self.dataframe.mean()
+                          ) / self.dataframe.std()
+
     @property
     def length(self):
         return len(self)
 
 
 class DistributedDataset(Dataset):
-    def __init__(self, directory: str, window_size: int, target_size: int, normalize: bool = False):
+    def __init__(self, directory: str, window_size: int, target_size: int, normalize: bool = False, cols=['Close'], target_cols=['Close']):
         self.datasets = []
         self.idx_dist = []
         self.files = list_files(directory)
@@ -48,17 +57,22 @@ class DistributedDataset(Dataset):
         self.window_size = window_size
         self.target_size = target_size
         self.normalize = normalize
+        self.cols = cols
+        self.target_cols = target_cols
         self.load_data()
 
     def load_data(self):
         idx_sum = 0
         for file in self.files:
-            data = pd.read_csv(file)['Close']
-            data = data.to_frame()
+            data = pd.read_csv(file)[self.cols]
+            if type(data) == pd.Series:
+                data = data.to_frame()
+
+            dataset = PandasDataset(
+                data, self.window_size, self.target_size, self.cols, self.target_cols)
             if self.normalize:
-                data = (data - data.mean()) / data.std()
-            dataset = PandasDataset(data, self.window_size, self.target_size)
-            try :
+                dataset.normalize()
+            try:
                 if len(dataset) <= 0:
                     continue
             except:

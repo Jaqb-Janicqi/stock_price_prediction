@@ -5,7 +5,7 @@ import os
 import multiprocessing as mp
 
 
-def download_close(ticker_name: str, interval: str) -> pd.DataFrame:
+def download_ticker(ticker_name: str, interval: str, cols=['Close']) -> pd.DataFrame:
     # Get today's date
     today = datetime.now().date()
     # check if ticker name is forex
@@ -17,34 +17,7 @@ def download_close(ticker_name: str, interval: str) -> pd.DataFrame:
     end = today  # - timedelta(days=1)
     while True:
         data: pd.Series = yf.download(ticker_name, start=start,
-                                      end=end, interval=interval)['Close']
-        if data is not None and len(data) > 0:
-            break
-        error_message = yf.shared._ERRORS[f'{ticker_name}=X']
-        if error_message is not None:
-            split_string = error_message.split()
-            split_string.reverse()
-            for item in split_string:
-                if item.isdigit():
-                    start = today - timedelta(days=int(item) - 1)
-
-    print(f'Downloaded {len(data)} rows for {ticker_name}')
-    return data.to_frame()
-
-
-def download_ticker(ticker_name: str, interval: str) -> pd.DataFrame:
-    # Get today's date
-    today = datetime.now().date()
-    # check if ticker name is forex
-    if 'USD' in ticker_name:
-        ticker_name += '=X'
-
-    # Calculate start and end dates, download data (yfinance allows at max 730 days from current date)
-    start = today - timedelta(days=729)
-    end = today  # - timedelta(days=1)
-    while True:
-        data: pd.Series = yf.download(ticker_name, start=start,
-                                      end=end, interval=interval)
+                                      end=end, interval=interval)[cols]
         if data is not None and len(data) > 0:
             break
         error_message = yf.shared._ERRORS[f'{ticker_name}=X']
@@ -59,13 +32,13 @@ def download_ticker(ticker_name: str, interval: str) -> pd.DataFrame:
     return data
 
 
-def download_worker(ticker: str, interval: str, split: bool = False):
+def download_worker(ticker: str, interval: str, split: bool = False, cols=['Close']):
     try:
-        data = download_ticker(ticker, interval)
+        data = download_ticker(ticker, interval, cols)
         data.to_csv(f'data/sp500/{ticker}_{interval}.csv')
         if split:
-            train = data.iloc[:int(len(data) * 0.7)]
-            val = data.iloc[int(len(data) * 0.7):int(len(data) * 0.9)]
+            train = data.iloc[:int(len(data) * 0.8)]
+            val = data.iloc[int(len(data) * 0.8):int(len(data) * 0.9)]
             test = data.iloc[int(len(data) * 0.9):]
             train.to_csv(f'data/sp500train/{ticker}_{interval}.csv')
             val.to_csv(f'data/sp500val/{ticker}_{interval}.csv')
@@ -92,10 +65,12 @@ def download_sp500(interval: str, split: bool) -> pd.DataFrame:
     if not os.path.exists('data/sp500test'):
         os.makedirs('data/sp500test')
 
+    cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+
     # Download and save data for all tickers in the S&P 500
     pool = mp.Pool(mp.cpu_count())
-    pool.starmap(download_worker, [
-                 (ticker, interval, split) for ticker in tickers])
+    pool.starmap(download_worker,
+                 [(ticker, interval, split, cols) for ticker in tickers])
     pool.close()
     pool.join()
 

@@ -3,24 +3,29 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-class GRU(nn.Module):
+class lstm_model(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, output_size):
-        super(GRU, self).__init__()
-        self.gru = nn.GRU(input_size, hidden_size,
+        super(lstm_model, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size,
                           num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, output_size)
+        # self.fc = nn.Linear(hidden_size, output_size)
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, output_size)
+        )
 
     def forward(self, x):
-        out, _ = self.gru(x)
+        out, _ = self.lstm(x)
         # Use only the output of the last time step
         out = self.fc(out[:, -1, :])
         return out
 
 
-class LitGRU(lit.LightningModule):
+class LitLSTM(lit.LightningModule):
     def __init__(self, input_size, hidden_size, num_layers, output_size, lr=1e-2, wd=1e-6):
-        super(LitGRU, self).__init__()
-        self.model = GRU(input_size, hidden_size, num_layers, output_size)
+        super(LitLSTM, self).__init__()
+        self.model = lstm_model(input_size, hidden_size, num_layers, output_size)
         self.loss_fn = nn.MSELoss()
         self.lr = lr
         self.wd = wd
