@@ -1,5 +1,6 @@
-import torch.nn as nn
 import numpy as np
+import torch.nn as nn
+
 
 class ModelClass:
     def __init__(self, model) -> None:
@@ -11,7 +12,8 @@ class ModelClass:
             try:
                 y = np.array(y)
             except:
-                raise ValueError(f"Model output is not a numpy array and cannot be converted to one: {y}")
+                raise ValueError(
+                    f"Model output is not a numpy array and cannot be converted to one: {y}")
         return y
 
     @property

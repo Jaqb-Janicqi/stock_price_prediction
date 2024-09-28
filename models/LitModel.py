@@ -1,8 +1,9 @@
+import numpy as np
+import pytorch_lightning as lit
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import pytorch_lightning as lit
-import numpy as np
+
 
 class LitModel(lit.LightningModule):
     def __init__(self, model, lr=1e-2, wd=1e-6, loss_function=nn.MSELoss()) -> None:
@@ -14,7 +15,7 @@ class LitModel(lit.LightningModule):
 
     def forward(self, x) -> torch.Tensor:
         return self._model_instance(x)
-    
+
     def predict(self, x) -> np.ndarray:
         # for compatibility with other frameworks
         return self.forward(x).to('cpu').detach().numpy()
@@ -47,19 +48,19 @@ class LitModel(lit.LightningModule):
         loss = self._step(batch)
         self.log('test_loss', loss)
         return loss
-    
+
     @property
     def model(self) -> nn.Module:
         return self._model_instance
-    
+
     @property
     def loss_function(self) -> nn.Module:
         return self._loss_function
-    
+
     @property
     def lr(self) -> float:
         return self._lr
-    
+
     @property
     def wd(self) -> float:
         return self._wd
