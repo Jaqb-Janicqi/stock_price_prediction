@@ -13,17 +13,23 @@ class LitModel(lit.LightningModule):
 
     def forward(self, x) -> torch.Tensor:
         return self._model_instance(x)
+    
+    def predict(self, x) -> torch.Tensor:
+        # for compatibility with other frameworks
+        return self.forward(x)
 
-    def configure_optimizers(self) -> dict:
-        optimizer = optim.AdamW(
-            self.parameters(), lr=self._lr, weight_decay=self._wd, amsgrad=True)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='min', factor=0.1, patience=4, min_lr=1e-8)
+    def configure_optimizers(self, optimizer=None, scheduler=None) -> dict:
+        if optimizer is None:
+            optimizer = optim.AdamW(
+                self.parameters(), lr=self._lr, weight_decay=self._wd, amsgrad=True)
+        if scheduler is None:
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode='min', factor=0.1, patience=4, min_lr=1e-8)
         return {'optimizer': optimizer, 'lr_scheduler': scheduler, 'monitor': 'val_loss'}
 
     def _step(self, batch) -> torch.Tensor:
         x, y = batch
-        y_hat = self._model_instance(x)
+        y_hat = self.forward(x)
         return self._loss_function(y_hat, y.squeeze(1))
 
     def training_step(self, batch, batch_idx) -> torch.Tensor:
