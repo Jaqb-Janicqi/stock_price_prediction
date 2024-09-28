@@ -1,0 +1,66 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import pytorch_lightning as lit
+
+class LitModel(lit.LightningModule):
+    def __init__(self, model, lr=1e-2, wd=1e-6, loss_function=nn.MSELoss()) -> None:
+        super(LitModel, self).__init__()
+        self._model_instance = model
+        self._loss_function = loss_function
+        self._lr = lr
+        self._wd = wd
+
+    def forward(self, x) -> torch.Tensor:
+        return self._model_instance(x)
+
+    def configure_optimizers(self) -> dict:
+        optimizer = optim.AdamW(
+            self.parameters(), lr=self._lr, weight_decay=self._wd, amsgrad=True)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode='min', factor=0.1, patience=4, min_lr=1e-8)
+        return {'optimizer': optimizer, 'lr_scheduler': scheduler, 'monitor': 'val_loss'}
+
+    def _step(self, batch) -> torch.Tensor:
+        x, y = batch
+        y_hat = self._model_instance(x)
+        return self._loss_function(y_hat, y.squeeze(1))
+
+    def training_step(self, batch, batch_idx) -> torch.Tensor:
+        loss = self._step(batch)
+        self.log('train_loss', loss)
+        return loss
+
+    def validation_step(self, batch, batch_idx) -> torch.Tensor:
+        loss = self._step(batch)
+        self.log('val_loss', loss)
+        return loss
+
+    def test_step(self, batch, batch_idx, dataloader_idx=0) -> torch.Tensor:
+        loss = self._step(batch)
+        self.log('test_loss', loss)
+        return loss
+    
+    @property
+    def model(self) -> nn.Module:
+        return self._model_instance
+    
+    @property
+    def loss_function(self) -> nn.Module:
+        return self._loss_function
+    
+    @property
+    def lr(self) -> float:
+        return self._lr
+    
+    @property
+    def wd(self) -> float:
+        return self._wd
+
+    @property.setter
+    def lr(self, value) -> None:
+        self._lr = value
+
+    @property.setter
+    def wd(self, value) -> None:
+        self._wd = value
