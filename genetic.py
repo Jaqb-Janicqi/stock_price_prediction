@@ -273,7 +273,7 @@ class GeneticLearner():
         # get score for each creature and sort according to fitness (models are trained jit)
         self._creatures.sort(key=lambda x: x.fitness, reverse=True)
 
-    def _population_eval_mt(self):  # doesnt work for now
+    def _population_eval_mt(self):  #TODO doesnt work for now
         cpu_count = multiprocessing.cpu_count()
         print(f"Cpu count: {cpu_count}")
         if cpu_count > 16:

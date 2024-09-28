@@ -40,8 +40,7 @@ class PandasDataset(Dataset):
         return [torch.tensor(np.array(x)).float() for x in zip(*batch)]
 
     def normalize(self):
-        self.dataframe = (self.dataframe - self.dataframe.mean()
-                          ) / self.dataframe.std()
+        self.dataframe = (self.dataframe - self.dataframe.mean()) / self.dataframe.std()
 
     @property
     def length(self):

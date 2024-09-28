@@ -20,9 +20,9 @@ if __name__ == '__main__':
     slice_size = 16
     num_workers = 16
     cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-    # cols = ['Close', 'Volume']
+    # cols = ['Close']
     target_cols = ['Close']
-    normalize = True
+    normalize = False
 
     # model params
     input_size = len(cols)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # prefix = 'sp500'
     prefix = 'sin_'
 
-    # create datasets
+    # # create datasets
     # train_dataset = DistributedDataset(
     #     directory=f'data\\{prefix}train', window_size=30, target_size=1, normalize=normalize, cols=cols, target_cols=target_cols)
     # test_dataset = DistributedDataset(
