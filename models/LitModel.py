@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pytorch_lightning as lit
+import numpy as np
 
 class LitModel(lit.LightningModule):
     def __init__(self, model, lr=1e-2, wd=1e-6, loss_function=nn.MSELoss()) -> None:
@@ -14,9 +15,9 @@ class LitModel(lit.LightningModule):
     def forward(self, x) -> torch.Tensor:
         return self._model_instance(x)
     
-    def predict(self, x) -> torch.Tensor:
+    def predict(self, x) -> np.ndarray:
         # for compatibility with other frameworks
-        return self.forward(x)
+        return self.forward(x).to('cpu').detach().numpy()
 
     def configure_optimizers(self, optimizer=None, scheduler=None) -> dict:
         if optimizer is None:
