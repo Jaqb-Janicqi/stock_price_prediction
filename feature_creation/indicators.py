@@ -9,14 +9,14 @@ def get_all_candlestick_patterns() -> List[str]:
 
 
 def get_candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
-    op = df['Open'].astype(float)
-    hi = df['High'].astype(float)
-    lo = df['Low'].astype(float)
-    cl = df['Close'].astype(float)
+    open = df['Open'].astype(float)
+    high = df['High'].astype(float)
+    low = df['Low'].astype(float)
+    close = df['Close'].astype(float)
 
     patterns = get_all_candlestick_patterns()
     for pattern in patterns:
-        df[pattern] = getattr(talib, pattern)(op, hi, lo, cl)
+        df[pattern] = getattr(talib, pattern)(open, high, low, close)
     return df
 
 
