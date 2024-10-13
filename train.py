@@ -85,7 +85,8 @@ if __name__ == '__main__':
     slice_size = 64
     num_workers = min(mp.cpu_count(), 8)
     cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-    target_cols = ['Close']
+    target_cols = ['Open', 'High', 'Low', 'Close']
+    target_size = 3
     normalize = True
     data_prefix = 'sp500'
 
@@ -140,11 +141,11 @@ if __name__ == '__main__':
 
     # create datasets
     train_dataset = DistributedDataset(
-        directory=f'data\\{data_prefix}train', window_size=30, target_size=1, normalize=normalize, cols=cols, target_cols=target_cols)
+        directory=f'data\\{data_prefix}train', window_size=30, target_size=target_size, normalize=normalize, cols=cols, target_cols=target_cols)
     test_dataset = DistributedDataset(
-        directory=f'data\\{data_prefix}test', window_size=30, target_size=1, normalize=normalize, cols=cols, target_cols=target_cols)
+        directory=f'data\\{data_prefix}test', window_size=30, target_size=target_size, normalize=normalize, cols=cols, target_cols=target_cols)
     val_dataset = DistributedDataset(
-        directory=f'data\\{data_prefix}val', window_size=30, target_size=1, normalize=normalize, cols=cols, target_cols=target_cols)
+        directory=f'data\\{data_prefix}val', window_size=30, target_size=target_size, normalize=normalize, cols=cols, target_cols=target_cols)
 
     # create dataloaders
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, sampler=SliceSampler(
