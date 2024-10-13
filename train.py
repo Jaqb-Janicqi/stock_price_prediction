@@ -174,5 +174,9 @@ if __name__ == '__main__':
         elif issubclass(model_param['class'], xgb.XGBRegressor):
             pass
 
+        else:
+            raise ValueError(
+                f"Model {model_name} is not a valid model class")
+
         # free memory
         del model
