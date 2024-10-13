@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 
 
-class lstm_model(nn.Module):
+class LSTM(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, output_size) -> None:
-        super(lstm_model, self).__init__()
+        super(LSTM, self).__init__()
         self._lstm = nn.LSTM(
             input_size, hidden_size, num_layers, batch_first=True
         )

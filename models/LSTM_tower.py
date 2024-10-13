@@ -2,13 +2,13 @@ import torch
 import torch.nn as nn
 
 
-class lstm_tower_model(nn.Module):
+class LSTM_tower(nn.Module):
     """
     Analysis of Bitcoin Price Prediction Using Machine Learning - Junwei Chen
     """
 
     def __init__(self, input_size, output_size) -> None:
-        super(lstm_tower_model, self).__init__()
+        super(LSTM_tower, self).__init__()
         self._lstm_tower = nn.ParameterList([
             nn.LSTM(input_size, 128, 1, batch_first=True),
             nn.Dropout(0.1),

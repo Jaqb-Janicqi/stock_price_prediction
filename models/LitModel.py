@@ -65,10 +65,10 @@ class LitModel(lit.LightningModule):
     def wd(self) -> float:
         return self._wd
 
-    @property.setter
+    @lr.setter
     def lr(self, value) -> None:
         self._lr = value
 
-    @property.setter
+    @wd.setter
     def wd(self, value) -> None:
         self._wd = value
