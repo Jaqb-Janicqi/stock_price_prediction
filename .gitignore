@@ -6,3 +6,6 @@ data/
 
 # ignore lightning_logs
 lightning_logs
+
+# ignore vscode config
+.vscode/
