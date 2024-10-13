@@ -71,6 +71,8 @@ class DistributedDataset(Dataset):
                 data, self.window_size, self.target_size, self.cols, self.target_cols)
             if self.normalize:
                 dataset.normalize()
+
+            # skip importing empty datasets
             try:
                 if len(dataset) <= 0:
                     continue
