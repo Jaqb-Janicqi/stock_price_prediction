@@ -130,8 +130,6 @@ if __name__ == '__main__':
             'class': LSTM_tower,
             'model_args': {
                 'input_size': len(cols),
-                'hidden_size': 32,
-                'num_layers': 4,
                 'output_size': len(target_cols)
             },
             'lr': lr,
