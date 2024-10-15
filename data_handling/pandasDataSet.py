@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 import os
 from typing import List
+from sklearn.preprocessing import MinMaxScaler
 
 
 def list_files(directory: str) -> List[str]:
@@ -23,6 +24,7 @@ class PandasDataset(Dataset):
         self.cols = cols
         self.target_cols = target_cols
         self.should_normalize = normalize
+        self._scaler = MinMaxScaler(feature_range=(0, 1))
         if self.should_normalize:
             self.normalize()
 
@@ -40,11 +42,23 @@ class PandasDataset(Dataset):
         return [torch.tensor(np.array(x)).float() for x in zip(*batch)]
 
     def normalize(self):
-        self.dataframe = (self.dataframe - self.dataframe.mean()) / self.dataframe.std()
+        # self.dataframe = (self.dataframe - self.dataframe.mean()) / self.dataframe.std()
+        self.dataframe[self.cols] = self.scaler.fit_transform(self.dataframe[self.cols])
+
+    def denormalize(self, data):
+        return self.scaler.inverse_transform(data)
 
     @property
     def length(self):
         return len(self)
+    
+    @property
+    def scaler(self):
+        return self._scaler
+    
+    @scaler.setter
+    def scaler(self, value):
+        self._scaler = value
 
 
 class DistributedDataset(Dataset):
