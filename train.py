@@ -86,7 +86,7 @@ if __name__ == '__main__':
     num_workers = min(mp.cpu_count(), 8)
     cols = ['Open', 'High', 'Low', 'Close', 'Volume']
     target_cols = ['Open', 'High', 'Low', 'Close']
-    target_size = 3
+    target_size = 1
     normalize = True
     data_prefix = 'sp500'
 
@@ -147,11 +147,11 @@ if __name__ == '__main__':
 
     # create dataloaders
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, sampler=SliceSampler(
-        train_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=train_dataset.collate_fn, num_workers=num_workers, pin_memory=True, persistent_workers=True)
+        train_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=train_dataset.collate_fn, num_workers=num_workers, persistent_workers=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, sampler=SliceSampler(
-        val_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=val_dataset.collate_fn, num_workers=num_workers, pin_memory=True, persistent_workers=True)
+        val_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=val_dataset.collate_fn, num_workers=num_workers, persistent_workers=True)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, sampler=SliceSampler(
-        test_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=test_dataset.collate_fn, num_workers=num_workers, pin_memory=True, persistent_workers=True)
+        test_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=test_dataset.collate_fn, num_workers=num_workers, persistent_workers=True)
 
     print(f"Train dataset length: {len(train_dataset)}")
     print(f"Val dataset length: {len(val_dataset)}")
@@ -167,8 +167,8 @@ if __name__ == '__main__':
                 val_dataloader, test_dataloader, model_param
             )
             # plot results
-            torch_plot(batch_size, train_dataset,
-                       test_dataset, val_dataset, model)
+            # torch_plot(batch_size, train_dataset,
+            #            test_dataset, val_dataset, model)
 
         elif issubclass(model_param['class'], xgb.XGBRegressor):
             pass
