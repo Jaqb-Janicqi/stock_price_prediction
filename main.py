@@ -3,92 +3,62 @@ import pandas as pd
 from datetime import datetime
 from data_handling.yfiDownloader import download_sp500  # Ensure this path is correct
 import os
+from time import sleep
 
-# Function to download stock data from Stooq
 
-def download_stooq_data(symbol):
-    url = f"https://stooq.com/q/d/l/?s={symbol.lower()}&i=d"
-    df = pd.read_csv(url)
-    df['Date'] = pd.to_datetime(df['Date'])
-    return df
+import talib
 
-# Function to download and combine S&P 500 data for AAPL
-def load_aapl_data():
-    try:
-        df_ticker = pd.read_csv(f'data/sp500/AAPL_1h.csv')  # Adjust this path if needed
-        df_ticker['Ticker'] = 'AAPL'  # Add ticker column
-        df_ticker['Date'] = pd.to_datetime(df_ticker['Date'])
-        return df_ticker
-    except FileNotFoundError:
-        st.warning("No data found for AAPL. Please download it first.")
-        return None
+
+
 
 # Streamlit app
 def main():
     st.title("Stock Data Viewer")
 
     # Sidebar: Select Stock Data
-    selected_stock = st.sidebar.selectbox("Select Stock Data", ["AAPL", "SP500 (AAPL Only)"])
+    
+    # Step 1: Select tickers
+    st.header("Step 1: Select Tickers or Download All")
+    sp500 = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+    tickers = sp500['Symbol'].tolist()
+    
+    # Checkbox for selecting all tickers
+    select_all = st.checkbox("Select all S&P 500 tickers")
+    
+    # Show the multi-select if "Select all" is not checked
+    if select_all:
+        selected_tickers = tickers  # If "Select all" is checked, select all tickers
+        st.write("All S&P 500 tickers are selected.")
+    else:
+        selected_tickers = st.multiselect("Select one or more tickers", tickers)
 
-    if selected_stock == "AAPL":
-        df = download_stooq_data("aapl.us")  
-        min_date = df['Date'].min().date()
-        max_date = df['Date'].max().date()
+    if st.button("Download Data"):
+        st.write("downloading")
+        download_sp500(selected_tickers,interval='1h', split=True)
+        st.write("downloaded")
+    show_data = st.checkbox("Do you want to see data")
 
-        # Sidebar: Date range slider for AAPL
-        st.sidebar.header("Select Date Range for AAPL")
-        start_date, end_date = st.sidebar.slider(
-            "Date Range",
-            min_value=min_date,
-            max_value=max_date,
-            value=(min_date, max_date),
-            format="YYYY-MM-DD"
-        )
+    if show_data:
+        filenames = [f for f in os.listdir('data/sp500') if os.path.isfile(os.path.join('data/sp500', f))]
 
-        # Download AAPL data within the selected date range
-        if st.button("Download AAPL Data"):
-            st.write("Downloading AAPL data from Stooq...")
-            try:
-                start_date_ts = pd.Timestamp(start_date)
-                end_date_ts = pd.Timestamp(end_date)
-                df_filtered = df[(df['Date'] >= start_date_ts) & (df['Date'] <= end_date_ts)]
-                st.write(f"Downloaded {len(df_filtered)} rows of AAPL stock data:")
-                st.dataframe(df_filtered)
-
-                if 'Close' in df_filtered.columns:
-                    df_filtered.set_index('Date', inplace=True)
-                    st.line_chart(df_filtered['Close'], width=700, height=300)
-
-                # Option to download the data as CSV
-                csv = df_filtered.to_csv(index=False).encode('utf-8')
-                st.download_button(label="Download CSV", data=csv, file_name='AAPL_stooq_data.csv', mime='text/csv')
-
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-
-    elif selected_stock == "SP500 (AAPL Only)":
-        if st.button("Download SP500 Data for AAPL"):
-            st.write("Downloading AAPL data from S&P 500...")
-            try:
-                # This will download the S&P 500 data for AAPL if not already downloaded
-                download_sp500(interval='1h', split=True)
-
-                # Load the combined data for AAPL
-                aapl_data = load_aapl_data()
-
-                # Ensure there is data available
-                if aapl_data is not None:
-                    # Print the AAPL data directly
-                    st.write("AAPL Stock Data:")
-                    st.dataframe(aapl_data)
-
-                    sw.write(aapl_data)
-                   
-
-                st.success("AAPL data from S&P 500 loaded successfully!")
-
-            except Exception as e:
-                st.error(f"An error occurred while downloading AAPL data from SP500: {e}")
+        to_preview=st.selectbox("Preview dataset",filenames)
+        chart = st.line_chart()
+        data = pd.read_csv('data/sp500/'+to_preview, parse_dates=['Datetime'])
+        
+        # Set 'Datetime' as index
+        data.set_index('Datetime', inplace=True)
+        data["SMA"] = talib.SMA(data.Close, timeperiod=3)
+        data["MA"]  = talib.MA(data.Close, timeperiod=3)
+        data["EMA"] = talib.EMA(data.Close, timeperiod=3)
+        data["WMA"] = talib.WMA(data.Close, timeperiod=3)
+        data["RSI"] = talib.RSI(data.Close, timeperiod=3)
+        data["MOM"] = talib.MOM(data.Close, timeperiod=3)
+        data["DEMA"] = talib.DEMA(data.Close, timeperiod=3)
+        data["TEMA"] = talib.TEMA(data.Close, timeperiod=3)
+        chart.add_rows(data['Close'])
+        st.write(data)
+        
+    
 
 if __name__ == "__main__":
     main()
