@@ -12,6 +12,7 @@ class LitModel(lit.LightningModule):
         self._loss_function = loss_function
         self._lr = lr
         self._wd = wd
+        self.save_hyperparameters()
 
     def forward(self, x) -> torch.Tensor:
         return self._model_instance(x)
