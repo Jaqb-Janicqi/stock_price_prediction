@@ -79,96 +79,124 @@ def torch_plot(batch_size: int, train_dataset: DistributedDataset, test_dataset:
             plt.show()
 
 
-if __name__ == '__main__':
-    # set hyperparameters
-    batch_size = 256
-    slice_size = 64
-    num_workers = min(mp.cpu_count(), 8)
-    cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-    target_cols = ['Open', 'High', 'Low', 'Close']
-    target_size = 1
-    normalize = True
-    data_prefix = 'sp500'
-
-    # training params
-    epochs = 20
-    lr = 1e-6
-    wd = 1e-6
-
-    # define callbacks
-    callbacks = [
-        ModelCheckpoint(monitor='val_loss', mode='min', save_top_k=3, dirpath='checkpoints',
-                        filename='model_{model.__class__.__name__}-epoch_{epoch:02d}-loss_{val_loss:.2f}'),
-        EarlyStopping(monitor='val_loss', patience=5, mode='min')
-    ]
-
-    # define models
-    model_dict = {
-        'GRU': {
-            'class': GRU,
-            'model_args': {
-                'input_size': len(cols),
-                'hidden_size': 32,
-                'num_layers': 4,
-                'output_size': len(target_cols)
-            },
-            'lr': lr,
-            'wd': wd
-        },
-        'LSTM': {
-            'class': LSTM,
-            'model_args': {
-                'input_size': len(cols),
-                'hidden_size': 32,
-                'num_layers': 4,
-                'output_size': len(target_cols)
-            },
-            'lr': lr,
-            'wd': wd
-        },
-        'LSTM_tower': {
-            'class': LSTM_tower,
-            'model_args': {
-                'input_size': len(cols),
-                'output_size': len(target_cols)
-            },
-            'lr': lr,
-            'wd': wd
-        }
-    }
-
-    # create datasets
+def prepare_dataloaders(hyperparams) -> list[DataLoader]:
     train_dataset = DistributedDataset(
-        directory=f'data\\{data_prefix}train', window_size=30, target_size=target_size, normalize=normalize, cols=cols, target_cols=target_cols)
+        directory=f'data\\{hyperparams["data_prefix"]}train', window_size=30, target_size=hyperparams['target_size'], normalize=hyperparams['normalize'], cols=hyperparams['cols'], target_cols=hyperparams['target_cols'])
     test_dataset = DistributedDataset(
-        directory=f'data\\{data_prefix}test', window_size=30, target_size=target_size, normalize=normalize, cols=cols, target_cols=target_cols)
+        directory=f'data\\{hyperparams["data_prefix"]}test', window_size=30, target_size=hyperparams['target_size'], normalize=hyperparams['normalize'], cols=hyperparams['cols'], target_cols=hyperparams['target_cols'])
     val_dataset = DistributedDataset(
-        directory=f'data\\{data_prefix}val', window_size=30, target_size=target_size, normalize=normalize, cols=cols, target_cols=target_cols)
+        directory=f'data\\{hyperparams["data_prefix"]}val', window_size=30, target_size=hyperparams['target_size'], normalize=hyperparams['normalize'], cols=hyperparams['cols'], target_cols=hyperparams['target_cols'])
 
-    # create dataloaders
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, sampler=SliceSampler(
-        train_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=train_dataset.collate_fn, num_workers=num_workers, persistent_workers=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, sampler=SliceSampler(
-        val_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=val_dataset.collate_fn, num_workers=num_workers, persistent_workers=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, sampler=SliceSampler(
-        test_dataset, slice_size=slice_size, batch_size=batch_size), collate_fn=test_dataset.collate_fn, num_workers=num_workers, persistent_workers=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=hyperparams['batch_size'], sampler=SliceSampler(
+        train_dataset, slice_size=hyperparams['slice_size'], batch_size=hyperparams['batch_size']), collate_fn=train_dataset.collate_fn, num_workers=hyperparams['num_workers'], persistent_workers=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=hyperparams['batch_size'], sampler=SliceSampler(
+        val_dataset, slice_size=hyperparams['slice_size'], batch_size=hyperparams['batch_size']), collate_fn=val_dataset.collate_fn, num_workers=hyperparams['num_workers'], persistent_workers=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=hyperparams['batch_size'], sampler=SliceSampler(
+        test_dataset, slice_size=hyperparams['slice_size'], batch_size=hyperparams['batch_size']), collate_fn=test_dataset.collate_fn, num_workers=hyperparams['num_workers'], persistent_workers=True)
 
     print(f"Train dataset length: {len(train_dataset)}")
     print(f"Val dataset length: {len(val_dataset)}")
     print(f"Test dataset length: {len(test_dataset)}")
+    return train_dataloader, val_dataloader, test_dataloader
+
+
+def initialize_models(hyperparams):
+    model_dict = {
+        'GRU': {
+            'class': GRU,
+            'model_args': {
+                'input_size': len(hyperparams['cols']),
+                'hidden_size': 32,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': len(hyperparams['cols']),
+                'hidden_size': 32,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM_tower': {
+            'class': LSTM_tower,
+            'model_args': {
+                'input_size': len(hyperparams['cols']),
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        }
+    }
+
+    return model_dict
+
+
+def create_callbacks():
+    callbacks = [
+        ModelCheckpoint(
+            monitor='val_loss',
+            mode='min',
+            save_top_k=3,
+            dirpath='checkpoints',
+            filename='model_{model.__class__.__name__}-epoch_{epoch:02d}-loss_{val_loss:.2f}'
+        ),
+        EarlyStopping(
+            monitor='val_loss',
+            patience=5,
+            mode='min'
+        )
+    ]
+
+    return callbacks
+
+
+def train(plot_model_performance=False) -> None:
+    # set hyperparameters
+    hyperparams = {
+        'batch_size': 256,
+        'slice_size': 64,
+        'num_workers': min(mp.cpu_count(), 8),
+        'cols': ['Open', 'High', 'Low', 'Close', 'Volume'],
+        'target_cols': ['Open', 'High', 'Low', 'Close'],
+        'target_size': 1,
+        'normalize': True,
+        'data_prefix': 'sp500',
+        'epochs': 20,
+        'lr': 1e-6,
+        'wd': 1e-6
+    }
+
+    # define callbacks
+    callbacks = create_callbacks()
+
+    # define models
+    model_dict = initialize_models(hyperparams)
+
+    # create dataloaders
+    train_dataloader, val_dataloader, test_dataloader = prepare_dataloaders(
+        hyperparams)
 
     for model_name, model_param in model_dict.items():
         if issubclass(model_param['class'], nn.Module):
             model = torch_train(
-                normalize, model_param['model_args'],
+                hyperparams['normalize'], model_param['model_args'],
                 model_param['model_args']['hidden_size'],
                 model_param['model_args']['num_layers'],
-                len(target_cols), epochs, callbacks, train_dataloader,
+                len(hyperparams['target_cols']
+                    ), hyperparams['epochs'], callbacks, train_dataloader,
                 val_dataloader, test_dataloader, model_param
             )
-            # plot results
-            # torch_plot(batch_size, train_dataset,
-            #            test_dataset, val_dataset, model)
+
+            if plot_model_performance:
+                torch_plot(hyperparams['batch_size'], train_dataloader.dataset,
+                        test_dataloader.dataset, val_dataloader.dataset, model)
 
         elif issubclass(model_param['class'], xgb.XGBRegressor):
             pass
@@ -179,3 +207,7 @@ if __name__ == '__main__':
 
         # free memory
         del model
+
+
+if __name__ == '__main__':
+    train()
