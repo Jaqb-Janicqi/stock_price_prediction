@@ -1,5 +1,7 @@
 import multiprocessing as mp
 import os
+from typing import List, Dict
+import shutil
 
 import torch
 import torch.nn as nn
@@ -23,31 +25,36 @@ from models.LSTM_tower import LSTM_tower
 from models.LitModel import LitModel
 
 
-def torch_train(
-        normalize: bool, input_size: int, hidden_size: int,
-        num_layers: int, output_size: int, epochs: int, callbacks: list,
-        train_dataloader: DataLoader, val_dataloader: DataLoader,
-        test_dataloader: DataLoader, model_param: dict) -> LitModel:
-
-    model = LitModel(model_param['class'](
-        **model_param['model_args']), lr=model_param['lr'], wd=model_param['wd'])
-    trainer = lit.Trainer(max_epochs=epochs, callbacks=callbacks, gradient_clip_val=0.5,
-                          gradient_clip_algorithm='norm', deterministic=True)
-    trainer.fit(model, train_dataloader, val_dataloader)
-
-    result = trainer.test(
-        model, [train_dataloader, val_dataloader, test_dataloader], ckpt_path="best")
+def torch_train(model_params: Dict, training_params: Dict, callbacks: List[lit.Callback], dataloaders: Dict) -> LitModel:
+    model = LitModel(
+        model_params['class'](**model_params['model_args']),
+        lr=model_params['lr'],
+        wd=model_params['wd']
+    )
+    trainer = lit.Trainer(
+        callbacks=callbacks,
+        **training_params['trainer_params']
+    )
+    trainer.fit(model, dataloaders['train'], dataloaders['val'])
+    result = trainer.test(model, dataloaders.values(), ckpt_path="best")
 
     os.makedirs('trained', exist_ok=True)
-    filename = f'trained/{model.__class__.__name__}_{input_size}_{hidden_size}_{num_layers}_\
-        {output_size}_normalized_{normalize}_testloss_{result[2]["test_loss/dataloader_idx_2"]}.pt'
-    torch.save(model.state_dict(), filename)
+    filename = ''.join([
+        f'trained/{model.__class__.__name__}',
+        f'_'.join(model_params.values()),
+        f'_tloss-{result[0]["test_loss/dataloader_idx_0"]}',
+        '.ckpt'
+    ])
+
+    checkpoint_callback = next(
+        x for x in callbacks if isinstance(x, ModelCheckpoint))
+    shutil.copy(checkpoint_callback.best_model_path + 'tmp')
+    os.rename(checkpoint_callback.best_model_path + 'tmp', filename)
     return model
 
 
 def torch_plot(batch_size: int, train_dataset: DistributedDataset, test_dataset: DistributedDataset,
                val_dataset: DistributedDataset, model: LitModel) -> None:
-
     if torch.cuda.is_available():
         model.cuda()
     model.eval()
@@ -86,24 +93,32 @@ def torch_plot(batch_size: int, train_dataset: DistributedDataset, test_dataset:
             plt.show()
 
 
-def prepare_dataloaders(hyperparams) -> list[DataLoader]:
-    train_dataset = DistributedDataset(
-        directory=f'data\\{hyperparams["data_prefix"]}train', window_size=30, target_size=hyperparams['target_size'], normalize=hyperparams['normalize'], cols=hyperparams['cols'], target_cols=hyperparams['target_cols'])
-    test_dataset = DistributedDataset(
-        directory=f'data\\{hyperparams["data_prefix"]}test', window_size=30, target_size=hyperparams['target_size'], normalize=hyperparams['normalize'], cols=hyperparams['cols'], target_cols=hyperparams['target_cols'])
-    val_dataset = DistributedDataset(
-        directory=f'data\\{hyperparams["data_prefix"]}val', window_size=30, target_size=hyperparams['target_size'], normalize=hyperparams['normalize'], cols=hyperparams['cols'], target_cols=hyperparams['target_cols'])
+def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoader]:
+    dataloaders = {}
+    for split in ['train', 'test', 'val']:
+        dset = DistributedDataset(
+            directory=f'data\\{hyperparams["data_prefix"]}{split}',
+            window_size=window_size,
+            normalize=hyperparams['normalize'],
+            cols=hyperparams['cols'],
+            target_cols=hyperparams['target_cols']
+        )
 
-    train_dataloader = DataLoader(train_dataset, batch_size=hyperparams['batch_size'], sampler=SliceSampler(
-        train_dataset, slice_size=hyperparams['slice_size'], batch_size=hyperparams['batch_size']), collate_fn=train_dataset.collate_fn, num_workers=hyperparams['num_workers'], persistent_workers=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=hyperparams['batch_size'], sampler=SliceSampler(
-        val_dataset, slice_size=hyperparams['slice_size'], batch_size=hyperparams['batch_size']), collate_fn=val_dataset.collate_fn, num_workers=hyperparams['num_workers'], persistent_workers=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=hyperparams['batch_size'], sampler=SliceSampler(
-        test_dataset, slice_size=hyperparams['slice_size'], batch_size=hyperparams['batch_size']), collate_fn=test_dataset.collate_fn, num_workers=hyperparams['num_workers'], persistent_workers=True)
-    return train_dataloader, val_dataloader, test_dataloader
+        dataloaders[split] = DataLoader(
+            dset,
+            batch_size=hyperparams['batch_size'],
+            sampler=SliceSampler(
+                dset,
+                slice_size=hyperparams['slice_size'],
+                batch_size=hyperparams['batch_size']),
+            collate_fn=dset.collate_fn,
+            num_workers=hyperparams['num_workers'],
+            persistent_workers=True
+        )
+    return dataloaders
 
 
-def initialize_models(hyperparams):
+def initialize_models(hyperparams: Dict) -> Dict:
     model_dict = {
         'GRU': {
             'class': GRU,
@@ -137,11 +152,10 @@ def initialize_models(hyperparams):
             'wd': hyperparams['wd']
         }
     }
-
     return model_dict
 
 
-def create_callbacks():
+def create_callbacks() -> List[lit.Callback]:
     callbacks = [
         ModelCheckpoint(
             monitor='val_loss',
@@ -156,52 +170,47 @@ def create_callbacks():
             mode='min'
         )
     ]
-
     return callbacks
 
 
-def train(plot_model_performance=False) -> None:
-    # set hyperparameters
-    hyperparams = {
+def train(plot_model_performance=False, model_dict=None) -> None:
+    # set training parameters
+    training_params = {
         'batch_size': 256,
         'slice_size': 64,
         'num_workers': min(mp.cpu_count(), 8),
         'cols': ['Open', 'High', 'Low', 'Close', 'Volume'],
         'target_cols': ['Open', 'High', 'Low', 'Close'],
-        'target_size': 1,
         'normalize': True,
         'data_prefix': 'sp500',
-        'epochs': 20,
         'lr': 1e-6,
-        'wd': 1e-6
+        'wd': 1e-6,
+        'trainer_params': {
+            'gradient_clip_val': 0.5,
+            'gradient_clip_algorithm': 'norm',
+            'deterministic_trainer': True,
+            'epochs': 5
+        }
     }
 
     # define callbacks
     callbacks = create_callbacks()
 
     # define models
-    model_dict = initialize_models(hyperparams)
+    model_dict = initialize_models(
+        training_params) if model_dict is None else model_dict
 
     # create dataloaders
-    train_dataloader, val_dataloader, test_dataloader = prepare_dataloaders(
-        hyperparams)
+    dataloaders = prepare_dataloaders(training_params)
 
-    for model_name, model_param in model_dict.items():
-        if issubclass(model_param['class'], nn.Module):
+    for model_name, model_params in model_dict.items():
+        if issubclass(model_params['class'], nn.Module):
             model = torch_train(
-                hyperparams['normalize'], model_param['model_args'],
-                model_param['model_args']['hidden_size'],
-                model_param['model_args']['num_layers'],
-                len(hyperparams['target_cols']
-                    ), hyperparams['epochs'], callbacks, train_dataloader,
-                val_dataloader, test_dataloader, model_param
-            )
-
+                model_params, training_params, callbacks, dataloaders)
             if plot_model_performance:
-                torch_plot(hyperparams['batch_size'], train_dataloader.dataset,
-                           test_dataloader.dataset, val_dataloader.dataset, model)
+                torch_plot(training_params, dataloaders, model)
 
-        elif issubclass(model_param['class'], xgb.XGBRegressor):
+        elif issubclass(model_params['class'], xgb.XGBRegressor):
             pass
 
         else:
