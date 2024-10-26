@@ -100,10 +100,6 @@ def prepare_dataloaders(hyperparams) -> list[DataLoader]:
         val_dataset, slice_size=hyperparams['slice_size'], batch_size=hyperparams['batch_size']), collate_fn=val_dataset.collate_fn, num_workers=hyperparams['num_workers'], persistent_workers=True)
     test_dataloader = DataLoader(test_dataset, batch_size=hyperparams['batch_size'], sampler=SliceSampler(
         test_dataset, slice_size=hyperparams['slice_size'], batch_size=hyperparams['batch_size']), collate_fn=test_dataset.collate_fn, num_workers=hyperparams['num_workers'], persistent_workers=True)
-
-    print(f"Train dataset length: {len(train_dataset)}")
-    print(f"Val dataset length: {len(val_dataset)}")
-    print(f"Test dataset length: {len(test_dataset)}")
     return train_dataloader, val_dataloader, test_dataloader
 
 
