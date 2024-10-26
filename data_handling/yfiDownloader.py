@@ -4,6 +4,7 @@ import yfinance as yf
 import os
 import multiprocessing as mp
 
+
 def download_ticker(ticker_name: str, interval: str, cols=['Close']) -> pd.DataFrame:
     # Get today's date
     today = datetime.now().date()
@@ -15,7 +16,8 @@ def download_ticker(ticker_name: str, interval: str, cols=['Close']) -> pd.DataF
     start = today - timedelta(days=729)
     end = today  # - timedelta(days=1)
     while True:
-        data: pd.DataFrame = yf.download(ticker_name, start=start, end=end, interval=interval)[cols]
+        data: pd.DataFrame = yf.download(
+            ticker_name, start=start, end=end, interval=interval)[cols]
         if data is not None and len(data) > 0:
             break
         error_message = yf.shared._ERRORS.get(f'{ticker_name}=X', None)
@@ -26,19 +28,22 @@ def download_ticker(ticker_name: str, interval: str, cols=['Close']) -> pd.DataF
                 if item.isdigit():
                     start = today - timedelta(days=int(item) - 1)
 
+    data.columns = cols
     print(f'Downloaded {len(data)} rows for {ticker_name}')
     return data
+
 
 def download_worker(ticker: str, interval: str, split: bool = False, cols=['Close']):
     try:
         data = download_ticker(ticker, interval, cols)
-        
+
         # Define file path
         file_path = f'data/sp500/{ticker}_{interval}.csv'
-        
+
         if os.path.exists(file_path):
             # Load existing data
-            existing_data = pd.read_csv(file_path, index_col=0, parse_dates=True)
+            existing_data = pd.read_csv(
+                file_path, index_col=0, parse_dates=True)
             # Append only new rows to the existing data
             new_data = data[~data.index.isin(existing_data.index)]
             combined_data = pd.concat([existing_data, new_data])
@@ -53,9 +58,11 @@ def download_worker(ticker: str, interval: str, split: bool = False, cols=['Clos
         if split:
             if os.path.exists(file_path):
                 # Load existing data for splitting
-                combined_data = pd.read_csv(file_path, index_col=0, parse_dates=True)
+                combined_data = pd.read_csv(
+                    file_path, index_col=0, parse_dates=True)
                 train = combined_data.iloc[:int(len(combined_data) * 0.8)]
-                val = combined_data.iloc[int(len(combined_data) * 0.8):int(len(combined_data) * 0.9)]
+                val = combined_data.iloc[int(
+                    len(combined_data) * 0.8):int(len(combined_data) * 0.9)]
                 test = combined_data.iloc[int(len(combined_data) * 0.9):]
 
                 # Save split data
@@ -72,6 +79,7 @@ def download_worker(ticker: str, interval: str, split: bool = False, cols=['Clos
                 test.to_csv(f'data/sp500test/{ticker}_{interval}.csv')
     except Exception as e:
         print(f'Error downloading {ticker}: {e}')
+
 
 def download_sp500(selected_tickers, interval: str, split: bool) -> None:
     if not os.path.exists('data'):
@@ -93,6 +101,7 @@ def download_sp500(selected_tickers, interval: str, split: bool) -> None:
                  [(ticker, interval, split, cols) for ticker in selected_tickers])
     pool.close()
     pool.join()
+
 
 if __name__ == '__main__':
     # Example usage; replace with your actual ticker selection
