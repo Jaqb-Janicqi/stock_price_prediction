@@ -17,10 +17,9 @@ def check_tensor_shapes(tensors):
 
 
 class PandasDataset(Dataset):
-    def __init__(self, dataframe: pd.DataFrame, window_size: int, target_size: int, cols=['Close'], target_cols=['Close'], normalize=False):
+    def __init__(self, dataframe: pd.DataFrame, window_size: int, cols=['Close'], target_cols=['Close'], normalize=False, target_size='deprecated'):
         self.dataframe = dataframe
         self.window_size = window_size
-        self.target_size = target_size
         self.cols = cols
         self.target_cols = target_cols
         self.should_normalize = normalize
@@ -60,15 +59,18 @@ class PandasDataset(Dataset):
     def scaler(self, value):
         self._scaler = value
 
+    @property
+    def target_size(self) -> int:
+        return len(self.target_cols)
+
 
 class DistributedDataset(Dataset):
-    def __init__(self, directory: str, window_size: int, target_size: int, normalize: bool = False, cols=['Close'], target_cols=['Close']):
+    def __init__(self, directory: str, window_size: int, normalize: bool = False, cols=['Close'], target_cols=['Close'], target_size='deprecated'):
         self.datasets = []
         self.idx_dist = []
         self.files = list_files(directory)
         self.num_files = len(self.files)
         self.window_size = window_size
-        self.target_size = target_size
         self.normalize = normalize
         self.cols = cols
         self.target_cols = target_cols
@@ -107,3 +109,7 @@ class DistributedDataset(Dataset):
 
     def collate_fn(self, batch) -> List[torch.Tensor]:
         return [torch.tensor(np.array(x)).float() for x in zip(*batch)]
+
+    @property
+    def target_size(self) -> int:
+        return len(self.target_cols)
