@@ -48,7 +48,8 @@ def torch_train(
 def torch_plot(batch_size: int, train_dataset: DistributedDataset, test_dataset: DistributedDataset,
                val_dataset: DistributedDataset, model: LitModel) -> None:
 
-    model.cuda()
+    if torch.cuda.is_available():
+        model.cuda()
     model.eval()
     dsets = [train_dataset, val_dataset, test_dataset]
     with torch.no_grad():
@@ -64,12 +65,18 @@ def torch_plot(batch_size: int, train_dataset: DistributedDataset, test_dataset:
                     x_, y_ = dset[j]
                     batch_x.append(x_)
                     batch_y.append(y_)
-                batch_x = torch.tensor(batch_x).float().cuda()
-                batch_y = torch.tensor(batch_y).float().cuda()
+
+                batch_x = torch.tensor(batch_x).float()
+                batch_y = torch.tensor(batch_y).float()
+                if torch.cuda.is_available():
+                    batch_x.cuda()
+                    batch_y.cuda()
                 batch_y_hat: torch.Tensor = model(batch_x)
+
                 x.append(batch_x)
                 y.append(batch_y)
                 yhat.append(batch_y_hat.cpu())
+
             x = torch.cat(x)
             y = torch.cat(y)
             y_hat = torch.cat(yhat)
@@ -196,7 +203,7 @@ def train(plot_model_performance=False) -> None:
 
             if plot_model_performance:
                 torch_plot(hyperparams['batch_size'], train_dataloader.dataset,
-                        test_dataloader.dataset, val_dataloader.dataset, model)
+                           test_dataloader.dataset, val_dataloader.dataset, model)
 
         elif issubclass(model_param['class'], xgb.XGBRegressor):
             pass
