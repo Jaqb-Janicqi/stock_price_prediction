@@ -193,9 +193,6 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         }
     }
 
-    # define callbacks
-    callbacks = create_callbacks()
-
     # define models
     model_dict = initialize_models(
         training_params) if model_dict is None else model_dict
@@ -206,7 +203,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
     for model_name, model_params in model_dict.items():
         if issubclass(model_params['class'], nn.Module):
             model = torch_train(
-                model_params, training_params, callbacks, dataloaders)
+                model_params, training_params, create_callbacks(), dataloaders)
             if plot_model_performance:
                 torch_plot(training_params, dataloaders, model)
 
