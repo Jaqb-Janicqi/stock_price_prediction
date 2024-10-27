@@ -36,20 +36,19 @@ def torch_train(model_params: Dict, training_params: Dict, callbacks: List[lit.C
         **training_params['trainer_params']
     )
     trainer.fit(model, dataloaders['train'], dataloaders['val'])
-    result = trainer.test(model, dataloaders.values(), ckpt_path="best")
+    result = trainer.test(model, list(dataloaders.values()), ckpt_path="best")
 
     os.makedirs('trained', exist_ok=True)
     filename = ''.join([
-        f'trained/{model.__class__.__name__}',
-        f'_'.join(model_params.values()),
+        f'trained/{model.model.__class__.__name__}_',
+        f'_'.join(str(x) for x in list(model_params['model_args'].values())),
         f'_tloss-{result[0]["test_loss/dataloader_idx_0"]}',
         '.ckpt'
     ])
 
     checkpoint_callback = next(
         x for x in callbacks if isinstance(x, ModelCheckpoint))
-    shutil.copy(checkpoint_callback.best_model_path + 'tmp')
-    os.rename(checkpoint_callback.best_model_path + 'tmp', filename)
+    shutil.copy(checkpoint_callback.best_model_path, filename)
     return model
 
 
@@ -97,11 +96,12 @@ def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoad
     dataloaders = {}
     for split in ['train', 'test', 'val']:
         dset = DistributedDataset(
-            directory=f'data\\{hyperparams["data_prefix"]}{split}',
+            directory=f'data/{hyperparams["data_prefix"]}{split}',
             window_size=window_size,
             normalize=hyperparams['normalize'],
             cols=hyperparams['cols'],
-            target_cols=hyperparams['target_cols']
+            target_cols=hyperparams['target_cols'],
+            prediction_size=hyperparams['prediction_size']
         )
 
         dataloaders[split] = DataLoader(
@@ -113,7 +113,7 @@ def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoad
                 batch_size=hyperparams['batch_size']),
             collate_fn=dset.collate_fn,
             num_workers=hyperparams['num_workers'],
-            persistent_workers=True
+            persistent_workers=True if hyperparams['num_workers'] > 0 else False
         )
     return dataloaders
 
@@ -162,7 +162,6 @@ def create_callbacks() -> List[lit.Callback]:
             mode='min',
             save_top_k=3,
             dirpath='checkpoints',
-            filename='model_{model.__class__.__name__}-epoch_{epoch:02d}-loss_{val_loss:.2f}'
         ),
         EarlyStopping(
             monitor='val_loss',
@@ -181,6 +180,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'num_workers': min(mp.cpu_count(), 8),
         'cols': ['Open', 'High', 'Low', 'Close', 'Volume'],
         'target_cols': ['Open', 'High', 'Low', 'Close'],
+        'prediction_size': 1,
         'normalize': True,
         'data_prefix': 'sp500',
         'lr': 1e-6,
@@ -188,8 +188,8 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'trainer_params': {
             'gradient_clip_val': 0.5,
             'gradient_clip_algorithm': 'norm',
-            'deterministic_trainer': True,
-            'epochs': 5
+            'deterministic': True,
+            'max_epochs': 2
         }
     }
 
