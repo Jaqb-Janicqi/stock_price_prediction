@@ -17,12 +17,15 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 import xgboost as xgb
 
+from sklearn.metrics import mean_squared_error
+
 from data_handling.pandasDataSet import DistributedDataset, PandasDataset
 from data_handling.sliceSampler import SliceSampler
 from models.GRU import GRU
 from models.LSTM import LSTM
 from models.LSTM_tower import LSTM_tower
 from models.LitModel import LitModel
+from models.ARIMA import ARIMA
 
 
 def torch_train(model_params: Dict, training_params: Dict, callbacks: List[lit.Callback], dataloaders: Dict) -> LitModel:
@@ -150,6 +153,14 @@ def initialize_models(hyperparams: Dict) -> Dict:
             },
             'lr': hyperparams['lr'],
             'wd': hyperparams['wd']
+        },
+        'ARIMA': {
+            'class': ARIMA,
+            'model_args': {
+                'p':1,
+                'd':1,
+                'q':1
+            }
         }
     }
     return model_dict
@@ -182,6 +193,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'target_cols': ['Open', 'High', 'Low', 'Close'],
         'prediction_size': 1,
         'normalize': True,
+        'differentiate': True,
         'data_prefix': 'sp500',
         'lr': 1e-6,
         'wd': 1e-6,
@@ -207,7 +219,19 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             if plot_model_performance:
                 torch_plot(training_params, dataloaders, model)
 
-        elif issubclass(model_params['class'], xgb.XGBRegressor):
+        elif model_params['class'] == ARIMA:
+            # Find out how to get the data based on the file pandasDataSet.py/////////////////////////////
+            train_price = data['Close'][:train_size] 
+            test_price = data['Close'][train_size:]
+            
+            arima_model = model_params['class'](**model_params['model_args'])
+            arima_model.fit(train_price)
+            predictions = arima_model.roll_forecast(test_price)
+            
+            mse = round(mean_squared_error(test_price, predictions), 2)
+            print(f'MSE: {mse}')
+            
+        elif issubclass(model_params['class'], a):
             pass
 
         else:
