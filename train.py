@@ -220,16 +220,17 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 torch_plot(training_params, dataloaders, model)
 
         elif model_params['class'] == ARIMA:
-            # Find out how to get the data based on the file pandasDataSet.py/////////////////////////////
-            train_price = data['Close'][:train_size] 
-            test_price = data['Close'][train_size:]
+            # TO DO
+            # train_price = data['Close'][:train_size] 
+            # test_price = data['Close'][train_size:]
             
-            arima_model = model_params['class'](**model_params['model_args'])
-            arima_model.fit(train_price)
-            predictions = arima_model.roll_forecast(test_price)
+            # arima_model = model_params['class'](**model_params['model_args'])
+            # arima_model.fit(train_price)
+            # predictions = arima_model.roll_forecast(test_price)
             
-            mse = round(mean_squared_error(test_price, predictions), 2)
-            print(f'MSE: {mse}')
+            # mse = round(mean_squared_error(test_price, predictions), 2)
+            # print(f'MSE: {mse}')
+            pass
             
         elif issubclass(model_params['class'], a):
             pass
