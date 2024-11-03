@@ -81,7 +81,14 @@ def download_worker(ticker: str, interval: str, split: bool = False, cols=['Clos
         print(f'Error downloading {ticker}: {e}')
 
 
-def download_sp500(selected_tickers, interval: str, split: bool) -> None:
+
+def get_sp500_ticker_names() -> list:
+    sp500 = pd.read_html(
+    'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+    return sp500['Symbol'].to_list()
+
+
+def download_tickers(selected_tickers=get_sp500_ticker_names(), interval='1h', split=True) -> None:
     if not os.path.exists('data'):
         os.makedirs('data')
     if not os.path.exists('data/sp500'):
@@ -106,4 +113,4 @@ def download_sp500(selected_tickers, interval: str, split: bool) -> None:
 if __name__ == '__main__':
     # Example usage; replace with your actual ticker selection
     selected_tickers = ['AAPL', 'MSFT']  # Add your tickers here
-    download_sp500(selected_tickers, interval='1h', split=True)
+    download_tickers()
