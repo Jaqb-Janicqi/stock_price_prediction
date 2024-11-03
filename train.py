@@ -219,7 +219,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             if plot_model_performance:
                 torch_plot(training_params, dataloaders, model)
 
-        elif model_params['class'] == ARIMA:
+        elif issubclass(model_params['class'], ARIMA):
             # TO DO
             # train_price = data['Close'][:train_size] 
             # test_price = data['Close'][train_size:]
