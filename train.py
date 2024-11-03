@@ -232,8 +232,8 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             # print(f'MSE: {mse}')
             pass
             
-        elif issubclass(model_params['class'], a):
-            pass
+        # elif issubclass(model_params['class'], a):
+        #     pass
 
         else:
             raise ValueError(
