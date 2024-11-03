@@ -24,6 +24,15 @@ def get_candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def get_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
+    df["SMA"] = talib.SMA(df['Close'].astype(float), timeperiod=3)
+    df["MA"]  = talib.MA(df['Close'].astype(float), timeperiod=3)
+    df["EMA"] = talib.EMA(df['Close'].astype(float), timeperiod=3)
+    df["WMA"] = talib.WMA(df['Close'].astype(float), timeperiod=3)
+    df["DEMA"] = talib.DEMA(df['Close'].astype(float), timeperiod=3)
+    df["TEMA"] = talib.TEMA(df['Close'].astype(float), timeperiod=3)
+
+
 def get_momentum_indicators(df: pd.DataFrame) -> pd.DataFrame:
     open, high, low, close = get_ohlc(df)
     volume = df['Volume'].astype(float)
