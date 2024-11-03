@@ -16,7 +16,7 @@ def get_ohlc(df: pd.DataFrame) -> List[pd.Series]:
     return [open, high, low, close]
 
 
-def get_candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
+def add_candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
     patterns = get_all_candlestick_patterns()
     ohlc = get_ohlc(df)
     for pattern in patterns:
@@ -24,7 +24,7 @@ def get_candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
+def add_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
     df["SMA"] = talib.SMA(df['Close'].astype(float), timeperiod=3)
     df["MA"]  = talib.MA(df['Close'].astype(float), timeperiod=3)
     df["EMA"] = talib.EMA(df['Close'].astype(float), timeperiod=3)
@@ -33,7 +33,7 @@ def get_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
     df["TEMA"] = talib.TEMA(df['Close'].astype(float), timeperiod=3)
 
 
-def get_momentum_indicators(df: pd.DataFrame) -> pd.DataFrame:
+def add_momentum_indicators(df: pd.DataFrame) -> pd.DataFrame:
     open, high, low, close = get_ohlc(df)
     volume = df['Volume'].astype(float)
     df['ADX'] = talib.ADX(high, low, close)
@@ -68,6 +68,6 @@ def get_momentum_indicators(df: pd.DataFrame) -> pd.DataFrame:
 if __name__ == "__main__":
     df = yf.download("AAPL", start="2023-01-01",
                      end="2024-10-01", interval='1h')
-    df = get_candlestick_patterns(df)
-    df = get_momentum_indicators(df)
+    df = add_candlestick_patterns(df)
+    df = add_momentum_indicators(df)
     print(df)
