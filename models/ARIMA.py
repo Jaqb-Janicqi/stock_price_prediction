@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima_model import ARIMA as StatsmodelsARIMA
 import torch.nn as nn
 
 class ARIMA(nn.Module):
-    def __init__(self, p=1, d=1, q=1):
+    def __init__(self, p, d, q):
         self.p = p
         self.d = d
         self.q = q
@@ -14,12 +14,11 @@ class ARIMA(nn.Module):
     def fit(self, data):
         # Fit the ARIMA model
         self.history = list(data)
-        self.model = ARIMA(self.history, order=(self.p, self.d, self.q))
-        self.model.fit()
+        self.model = StatsmodelsARIMA(self.history, order=(self.p, self.d, self.q)).fit()
         
     def predict(self, steps):
         # Make predictions
-        if self.model is not None:
+        if self.model is None:
             raise ValueError("Model must be fitted first before prediction.")
         
         forecast = self.model.forecast(steps)
@@ -28,9 +27,10 @@ class ARIMA(nn.Module):
     def rolling_forecast(self, test_data):
         predictions = []
         for actual in test_data:
+            # Fit the model on the current history
             self.fit(pd.Series(self.history))
             forecast = self.predict(1)
-            predictions.append(forecast[0])
+            predictions.append(forecast)
             # Update history with actual value
             self.history.append(actual)
         return np.array(predictions)

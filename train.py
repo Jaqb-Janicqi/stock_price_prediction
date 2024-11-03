@@ -6,6 +6,8 @@ import shutil
 import torch
 import torch.nn as nn
 from matplotlib import pyplot as plt
+import pandas as pd
+import numpy as np
 from torch.utils.data import DataLoader
 if torch.cuda.is_available():
     torch.set_default_dtype(torch.float32)
@@ -193,7 +195,6 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'target_cols': ['Open', 'High', 'Low', 'Close'],
         'prediction_size': 1,
         'normalize': True,
-        'differentiate': True,
         'data_prefix': 'sp500',
         'lr': 1e-6,
         'wd': 1e-6,
@@ -220,17 +221,42 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 torch_plot(training_params, dataloaders, model)
 
         elif issubclass(model_params['class'], ARIMA):
-            # TO DO
-            # train_price = data['Close'][:train_size] 
-            # test_price = data['Close'][train_size:]
-            
-            # arima_model = model_params['class'](**model_params['model_args'])
-            # arima_model.fit(train_price)
-            # predictions = arima_model.roll_forecast(test_price)
-            
-            # mse = round(mean_squared_error(test_price, predictions), 2)
-            # print(f'MSE: {mse}')
-            pass
+            # Load training and testing data
+            data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
+            data['Datetime'] = pd.to_datetime(data['Datetime'])
+            data.set_index('Datetime', inplace=True)
+
+            # Splitted data into train and test
+            # train_data = pd.read_csv('data/sp500train/AAPL_1h.csv', low_memory=False)
+            # test_data = pd.read_csv('data/sp500test/AAPL_1h.csv', low_memory=False)
+
+            # For 0.7 train and 0.3 test split model provides better results than 0.8 train and 0.2 test split
+            train_size = int(len(data)*0.7)
+            train_price = data['Close'][:train_size]
+            test_price = data['Close'][train_size:]
+
+            # Initialize and fit the model
+            arima_model = ARIMA(p=1, d=1, q=1)
+
+            # Fit the model on training data
+            arima_model.fit(train_price)
+
+            # Make predictions on the test set
+            predictions = arima_model.rolling_forecast(test_price)
+
+            # Calculate Mean Squared Error
+            mse = round(mean_squared_error(test_price, predictions), 2)
+            print(f'MSE: {mse}')
+            mape = round(np.mean(np.abs((test_price - predictions)/test_price))*100, 2)
+            print(f'MSE: {mape}')
+
+            # Plotting the results
+            plt.plot(data.index[:train_size], train_price, color="blue", label="Train")
+            plt.plot(data.index[train_size:], test_price, color="grey", label="Test")
+            plt.plot(data.index[train_size:], predictions, label="Predicted", color='red', ls=':')
+            plt.title("ARIMA Model Prediction")
+            plt.legend()
+            plt.show()
             
         # elif issubclass(model_params['class'], a):
         #     pass

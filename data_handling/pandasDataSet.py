@@ -21,20 +21,17 @@ def check_tensor_shapes(tensors):
 class PandasDataset(Dataset):
     def __init__(self, dataframe: pd.DataFrame, window_size: int, 
                  cols=['Close'], target_cols=['Close'], normalize=False, 
-                 differentiate=False, prediction_size=1, drop_null_rows=True):
+                 prediction_size=1, drop_null_rows=True):
         self.dataframe = dataframe
         self.window_size = window_size
         self.cols = cols
         self.target_cols = target_cols
         self.should_normalize = normalize
-        self.should_differentiate = differentiate
         self.prediction_size = prediction_size
         self._scaler = MinMaxScaler(feature_range=(0, 1))
         self._drop_null_rows = drop_null_rows
         if self.should_normalize:
             self.normalize()
-        if self.should_differentiate:
-            self.differentiate()
         if self._drop_null_rows:
             self.dataframe.dropna(axis=0)
 
@@ -58,10 +55,6 @@ class PandasDataset(Dataset):
     def denormalize(self, data):
         return self.scaler.inverse_transform(data)
 
-    def differentiate(self):
-        self.dataframe[self.cols] = self.dataframe[self.cols].diff(periods=1).dropna()
-
-
     @property
     def length(self):
         return len(self)
@@ -77,7 +70,7 @@ class PandasDataset(Dataset):
 
 class DistributedDataset(Dataset):
     def __init__(self, directory: str, window_size: int, normalize: bool = False, 
-                 differentiate: bool = False, cols=['Close'], target_cols=['Close'], 
+                 cols=['Close'], target_cols=['Close'], 
                  prediction_size=1, create_features=True):
         self.datasets = []
         self.idx_dist = []
@@ -85,7 +78,6 @@ class DistributedDataset(Dataset):
         self.num_files = len(self.files)
         self.window_size = window_size
         self.normalize = normalize
-        self.differentiate = differentiate
         self.cols = cols
         self.target_cols = target_cols
         self.prediction_size = prediction_size
@@ -106,11 +98,9 @@ class DistributedDataset(Dataset):
                 self.create_features(data)
 
             dataset = PandasDataset(
-                data, self.window_size, self.cols, self.target_cols, self.normalize, self.differentiate, self.prediction_size)
+                data, self.window_size, self.cols, self.target_cols, self.normalize, self.prediction_size)
             if self.normalize:
                 dataset.normalize()
-            if self.differentiate:
-                dataset.differentiate()
 
             # skip importing empty datasets
             try:
