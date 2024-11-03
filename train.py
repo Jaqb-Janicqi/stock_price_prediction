@@ -247,8 +247,8 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             # Calculate Mean Squared Error
             mse = round(mean_squared_error(test_price, predictions), 2)
             print(f'MSE: {mse}')
-            mape = round(np.mean(np.abs((test_price - predictions)/test_price))*100, 2)
-            print(f'MSE: {mape}')
+            # mape = round(np.mean(np.abs((test_price - predictions)/test_price))*100, 2)
+            # print(f'MSE: {mape}')
 
             # Plotting the results
             plt.plot(data.index[:train_size], train_price, color="blue", label="Train")
