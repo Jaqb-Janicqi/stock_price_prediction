@@ -1,9 +1,8 @@
 import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima_model import ARIMA as StatsmodelsARIMA
-import torch.nn as nn
 
-class ARIMA(nn.Module):
+class ARIMA:
     def __init__(self, p, d, q):
         self.p = p
         self.d = d
