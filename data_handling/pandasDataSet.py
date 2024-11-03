@@ -91,7 +91,7 @@ class DistributedDataset(Dataset):
         self.prediction_size = prediction_size
         self.load_data()
 
-    def create_features(df: pd.DataFrame) -> None:
+    def create_features(self, df: pd.DataFrame) -> None:
         indicators.add_candlestick_patterns(df)
         indicators.add_candlestick_patterns(df)
         indicators.add_moving_averages(df)
