@@ -28,6 +28,7 @@ from models.LSTM import LSTM
 from models.LSTM_tower import LSTM_tower
 from models.LitModel import LitModel
 from models.ARIMA import ARIMA
+from models.RidgeRegression import RidgeRegression
 
 
 def torch_train(model_params: Dict, training_params: Dict, callbacks: List[lit.Callback], dataloaders: Dict) -> LitModel:
@@ -163,6 +164,12 @@ def initialize_models(hyperparams: Dict) -> Dict:
                 'd':1,
                 'q':1
             }
+        },
+        'RidgeRegression':{
+            'class': RidgeRegression,
+            'model_args': {
+                'alpha': 1.0
+            }
         }
     }
     return model_dict
@@ -221,6 +228,9 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 torch_plot(training_params, dataloaders, model)
 
         elif issubclass(model_params['class'], ARIMA):
+            #!!! Loading, splitting data go outside the model class !!!
+            # as well as plotting and calculating metrics
+            
             # Load training and testing data
             data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
             data['Datetime'] = pd.to_datetime(data['Datetime'])
@@ -257,7 +267,48 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             plt.title("ARIMA Model Prediction")
             plt.legend()
             plt.show()
+        
+        elif issubclass(model_params['class'] == RidgeRegression):
+            #!!! Loading, splitting data go outside the model class !!!
+            # as well as plotting and calculating metrics
             
+            # Load training and testing data
+            data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
+            data['Datetime'] = pd.to_datetime(data['Datetime'])
+            data.set_index('Datetime', inplace=True)
+
+            # Calculate the Daily Percentage Change in stock price - returns
+            data['Returns'] = (data['Close'].pct_change() * 100).round(2)
+            data.dropna(inplace=True)
+            data.head()
+
+            # For 0.7 train and 0.3 test split model provides better results than 0.8 train and 0.2 test split
+            train_size = int(len(data)*0.7)
+            train_price = data['Close'][:train_size]
+            test_price = data['Close'][train_size:]
+
+            # Initialize and fit the model
+            ridge_model = RidgeRegression(alpha=1)
+            ridge_model.history = list(data['Returns'][0:train_size])
+
+            predicted_returns = ridge_model.rolling_forecast(data['Returns'][train_size:])
+
+            predicted_prices = []
+            for i, predicted_return in enumerate(predicted_returns):
+                new_price = test_price.iloc[i - 1] if i > 0 else train_price.iloc[-1]
+                predicted_prices.append(new_price * (1 + predicted_return / 100))
+
+            # Calculate Mean Squared Error
+            mse = round(mean_squared_error(test_price, predicted_prices), 2)
+            print(f'MSE: {mse}')
+
+            # Plot the results
+            plt.plot(data.index[:train_size], train_price, color="blue", label="Train")
+            plt.plot(data.index[train_size:], test_price, color="grey", label="Test")
+            plt.plot(data.index[train_size:], predicted_prices, label="Predicted", color='red', ls=':')
+            plt.title("Ridge Regression Model Prediction")
+            plt.legend()
+            plt.show()
         # elif issubclass(model_params['class'], a):
         #     pass
 
