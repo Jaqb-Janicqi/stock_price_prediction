@@ -15,7 +15,8 @@ class LSTM(nn.Module):
         )
 
     def forward(self, x) -> torch.Tensor:
-        out, _ = self._lstm(x)
-        # Use only the output of the last time step
+        h_0 = torch.zeros(self._lstm.num_layers, x.size(0), self._lstm.hidden_size, device=x.device)
+        c_0 = torch.zeros(self._lstm.num_layers, x.size(0), self._lstm.hidden_size, device=x.device)
+        out, _ = self._lstm(x, (h_0, c_0))
         out = self._fc(out[:, -1, :])
         return out

@@ -19,14 +19,16 @@ class LSTM_tower(nn.Module):
             nn.LSTM(128, 256, 1, batch_first=True),
             nn.Dropout(0.1),
             nn.ReLU(),
-            nn.LSTM(256, 256, 1, batch_first=True),
-            nn.Linear(256, output_size)
+            nn.LSTM(256, 256, 1, batch_first=True)
         ])
+        self._linear = nn.Linear(256, output_size)
 
     def forward(self, x) -> torch.Tensor:
         for layer in self._lstm_tower:
             if isinstance(layer, nn.LSTM):
-                x, _ = layer(x)
+                h_0 = torch.zeros(1, x.size(0), layer.hidden_size, device=x.device)
+                c_0 = torch.zeros(1, x.size(0), layer.hidden_size, device=x.device)
+                x, _ = layer(x, (h_0, c_0))
             else:
                 x = layer(x)
         # Use only the output of the last time step

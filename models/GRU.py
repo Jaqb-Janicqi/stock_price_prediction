@@ -11,7 +11,8 @@ class GRU(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x) -> torch.Tensor:
-        out, _ = self.gru(x)
+        h_0 = torch.zeros(self.gru.num_layers, x.size(0), self.gru.hidden_size, device=x.device)
+        out, _ = self.gru(x, h_0)
         # Use only the output of the last time step
         out = self.fc(out[:, -1, :])
         return out
