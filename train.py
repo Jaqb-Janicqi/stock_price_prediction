@@ -26,6 +26,7 @@ from data_handling.sliceSampler import SliceSampler
 from models.GRU import GRU
 from models.LSTM import LSTM
 from models.LSTM_tower import LSTM_tower
+from models.DeepLOB import DeepLOB
 from models.LitModel import LitModel
 from models.ARIMA import ARIMA
 from models.RidgeRegression import RidgeRegression
@@ -154,6 +155,12 @@ def initialize_models(hyperparams: Dict) -> Dict:
                 'input_size': len(hyperparams['cols']),
                 'output_size': len(hyperparams['target_cols'])
             },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'DeepLob': {
+            'class': DeepLOB,
+            'model_args': {},
             'lr': hyperparams['lr'],
             'wd': hyperparams['wd']
         },
