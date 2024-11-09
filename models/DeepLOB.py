@@ -90,8 +90,8 @@ class DeepLOB(nn.Module):
         x = torch.reshape(x, (-1, x.shape[1], x.shape[2]))
 
         x, _ = self._lstm(x, (
-            torch.zeros(1, x.size(0), 64),
-            torch.zeros(1, x.size(0), 64)
+            torch.zeros(1, x.size(0), 64, device=x.device),
+            torch.zeros(1, x.size(0), 64, device=x.device)
         ))
         x = x[:, -1, :]
         return self._linear(x)
