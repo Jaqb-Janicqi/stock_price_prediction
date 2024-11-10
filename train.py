@@ -131,8 +131,8 @@ def initialize_models(hyperparams: Dict) -> Dict:
             'class': GRU,
             'model_args': {
                 'input_size': len(hyperparams['cols']),
-                'hidden_size': 32,
-                'num_layers': 4,
+                'hidden_size': 256,
+                'num_layers': 8,
                 'output_size': len(hyperparams['target_cols'])
             },
             'lr': hyperparams['lr'],
@@ -142,7 +142,51 @@ def initialize_models(hyperparams: Dict) -> Dict:
             'class': LSTM,
             'model_args': {
                 'input_size': len(hyperparams['cols']),
-                'hidden_size': 32,
+                'hidden_size': 256,
+                'num_layers': 8,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'GRU_shallow': {
+            'class': GRU,
+            'model_args': {
+                'input_size': len(hyperparams['cols']),
+                'hidden_size': 256,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM_shallow': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': len(hyperparams['cols']),
+                'hidden_size': 256,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'GRU_small': {
+            'class': GRU,
+            'model_args': {
+                'input_size': len(hyperparams['cols']),
+                'hidden_size': 128,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM_small': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': len(hyperparams['cols']),
+                'hidden_size': 128,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
             },
@@ -158,26 +202,26 @@ def initialize_models(hyperparams: Dict) -> Dict:
             'lr': hyperparams['lr'],
             'wd': hyperparams['wd']
         },
-        'DeepLob': {
-            'class': DeepLOB,
-            'model_args': {},
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'ARIMA': {
-            'class': ARIMA,
-            'model_args': {
-                'p':1,
-                'd':1,
-                'q':1
-            }
-        },
-        'RidgeRegression':{
-            'class': RidgeRegression,
-            'model_args': {
-                'alpha': 1.0
-            }
-        }
+        # 'DeepLob': {
+        #     'class': DeepLOB,
+        #     'model_args': {},
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'ARIMA': {
+        #     'class': ARIMA,
+        #     'model_args': {
+        #         'p':1,
+        #         'd':1,
+        #         'q':1
+        #     }
+        # },
+        # 'RidgeRegression':{
+        #     'class': RidgeRegression,
+        #     'model_args': {
+        #         'alpha': 1.0
+        #     }
+        # }
     }
     return model_dict
 
@@ -210,7 +254,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'prediction_size': 1,
         'normalize': True,
         'data_prefix': 'sp500',
-        'lr': 1e-6,
+        'lr': 1e-3,
         'wd': 1e-6,
         'trainer_params': {
             'gradient_clip_val': 0.5,
