@@ -22,7 +22,7 @@ class PandasDataset(Dataset):
     def __init__(self, dataframe: pd.DataFrame, window_size: int, 
                  cols=['Close'], target_cols=['Close'], normalize=False, 
                  prediction_size=1, drop_null_rows=True):
-        self._dataframe = dataframe
+        self.dataframe = dataframe
         self.window_size = window_size
         self.cols = cols
         self.target_cols = target_cols
@@ -67,10 +67,6 @@ class PandasDataset(Dataset):
     def scaler(self, value):
         self._scaler = value
 
-    @property
-    def dataframe(self):
-        return self._dataframe
-
 
 class DistributedDataset(Dataset):
     def __init__(self, directory: str, window_size: int, normalize: bool = False, 
@@ -103,7 +99,7 @@ class DistributedDataset(Dataset):
                 self.create_features(data)
 
             dataset = PandasDataset(
-                data, self.window_size, self.cols, self.target_cols, self.normalize, self.prediction_size)
+                data, self.window_size, data.columns.tolist(), self.target_cols, self.normalize, self.prediction_size)
             if self.normalize:
                 dataset.normalize()
             if self.should_create_features:

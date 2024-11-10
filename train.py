@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 if torch.cuda.is_available():
     torch.set_default_dtype(torch.float32)
     torch.set_default_device('cuda')
-    torch.set_float32_matmul_precision('high')
+    # torch.set_float32_matmul_precision('high')
 
 import pytorch_lightning as lit
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -130,7 +130,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'GRU': {
             'class': GRU,
             'model_args': {
-                'input_size': len(hyperparams['cols']),
+                'input_size': 72,
                 'hidden_size': 256,
                 'num_layers': 8,
                 'output_size': len(hyperparams['target_cols'])
@@ -141,7 +141,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'LSTM': {
             'class': LSTM,
             'model_args': {
-                'input_size': len(hyperparams['cols']),
+                'input_size': 72,
                 'hidden_size': 256,
                 'num_layers': 8,
                 'output_size': len(hyperparams['target_cols'])
@@ -152,7 +152,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'GRU_shallow': {
             'class': GRU,
             'model_args': {
-                'input_size': len(hyperparams['cols']),
+                'input_size': 72,
                 'hidden_size': 256,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
@@ -163,7 +163,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'LSTM_shallow': {
             'class': LSTM,
             'model_args': {
-                'input_size': len(hyperparams['cols']),
+                'input_size': 72,
                 'hidden_size': 256,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
@@ -174,7 +174,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'GRU_small': {
             'class': GRU,
             'model_args': {
-                'input_size': len(hyperparams['cols']),
+                'input_size': 72,
                 'hidden_size': 128,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
@@ -185,7 +185,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'LSTM_small': {
             'class': LSTM,
             'model_args': {
-                'input_size': len(hyperparams['cols']),
+                'input_size': 72,
                 'hidden_size': 128,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
@@ -196,7 +196,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'LSTM_tower': {
             'class': LSTM_tower,
             'model_args': {
-                'input_size': len(hyperparams['cols']),
+                'input_size': 72,
                 'output_size': len(hyperparams['target_cols'])
             },
             'lr': hyperparams['lr'],
@@ -246,7 +246,7 @@ def create_callbacks() -> List[lit.Callback]:
 def train(plot_model_performance=False, model_dict=None) -> None:
     # set training parameters
     training_params = {
-        'batch_size': 256,
+        'batch_size': 512,
         'slice_size': 64,
         'num_workers': min(mp.cpu_count(), 8),
         'cols': ['Open', 'High', 'Low', 'Close', 'Volume'],
@@ -260,7 +260,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             'gradient_clip_val': 0.5,
             'gradient_clip_algorithm': 'norm',
             'deterministic': True,
-            'max_epochs': 2
+            'max_epochs': 20
         }
     }
 
@@ -281,7 +281,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         elif issubclass(model_params['class'], ARIMA):
             #!!! Loading, splitting data go outside the model class !!!
             # as well as plotting and calculating metrics
-            
+
             # Load training and testing data
             data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
             data['Datetime'] = pd.to_datetime(data['Datetime'])
@@ -312,17 +312,20 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             # print(f'MSE: {mape}')
 
             # Plotting the results
-            plt.plot(data.index[:train_size], train_price, color="blue", label="Train")
-            plt.plot(data.index[train_size:], test_price, color="grey", label="Test")
-            plt.plot(data.index[train_size:], predictions, label="Predicted", color='red', ls=':')
+            plt.plot(data.index[:train_size], train_price,
+                     color="blue", label="Train")
+            plt.plot(data.index[train_size:], test_price,
+                     color="grey", label="Test")
+            plt.plot(data.index[train_size:], predictions,
+                     label="Predicted", color='red', ls=':')
             plt.title("ARIMA Model Prediction")
             plt.legend()
             plt.show()
-        
+
         elif issubclass(model_params['class'] == RidgeRegression):
             #!!! Loading, splitting data go outside the model class !!!
             # as well as plotting and calculating metrics
-            
+
             # Load training and testing data
             data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
             data['Datetime'] = pd.to_datetime(data['Datetime'])
@@ -342,21 +345,27 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             ridge_model = RidgeRegression(alpha=1)
             ridge_model.history = list(data['Returns'][0:train_size])
 
-            predicted_returns = ridge_model.rolling_forecast(data['Returns'][train_size:])
+            predicted_returns = ridge_model.rolling_forecast(
+                data['Returns'][train_size:])
 
             predicted_prices = []
             for i, predicted_return in enumerate(predicted_returns):
-                new_price = test_price.iloc[i - 1] if i > 0 else train_price.iloc[-1]
-                predicted_prices.append(new_price * (1 + predicted_return / 100))
+                new_price = test_price.iloc[i -
+                                            1] if i > 0 else train_price.iloc[-1]
+                predicted_prices.append(
+                    new_price * (1 + predicted_return / 100))
 
             # Calculate Mean Squared Error
             mse = round(mean_squared_error(test_price, predicted_prices), 2)
             print(f'MSE: {mse}')
 
             # Plot the results
-            plt.plot(data.index[:train_size], train_price, color="blue", label="Train")
-            plt.plot(data.index[train_size:], test_price, color="grey", label="Test")
-            plt.plot(data.index[train_size:], predicted_prices, label="Predicted", color='red', ls=':')
+            plt.plot(data.index[:train_size], train_price,
+                     color="blue", label="Train")
+            plt.plot(data.index[train_size:], test_price,
+                     color="grey", label="Test")
+            plt.plot(data.index[train_size:], predicted_prices,
+                     label="Predicted", color='red', ls=':')
             plt.title("Ridge Regression Model Prediction")
             plt.legend()
             plt.show()
