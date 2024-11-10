@@ -67,6 +67,10 @@ class PandasDataset(Dataset):
     def scaler(self, value):
         self._scaler = value
 
+    @property
+    def dataframe(self):
+        return self._dataframe
+
 
 class DistributedDataset(Dataset):
     def __init__(self, directory: str, window_size: int, normalize: bool = False, 
@@ -81,6 +85,7 @@ class DistributedDataset(Dataset):
         self.cols = cols
         self.target_cols = target_cols
         self.prediction_size = prediction_size
+        self.should_create_features = create_features
         self.load_data()
 
     def create_features(self, df: pd.DataFrame) -> None:
@@ -101,6 +106,8 @@ class DistributedDataset(Dataset):
                 data, self.window_size, self.cols, self.target_cols, self.normalize, self.prediction_size)
             if self.normalize:
                 dataset.normalize()
+            if self.should_create_features:
+                self.create_features(dataset.dataframe)
 
             # skip importing empty datasets
             try:
