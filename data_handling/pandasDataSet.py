@@ -22,7 +22,7 @@ class PandasDataset(Dataset):
     def __init__(self, dataframe: pd.DataFrame, window_size: int, 
                  cols=['Close'], target_cols=['Close'], normalize=False, 
                  prediction_size=1, drop_null_rows=True):
-        self.dataframe = dataframe
+        self._dataframe = dataframe
         self.window_size = window_size
         self.cols = cols
         self.target_cols = target_cols
