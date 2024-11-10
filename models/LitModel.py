@@ -27,7 +27,7 @@ class LitModel(lit.LightningModule):
                 self.parameters(), lr=self._lr, weight_decay=self._wd, amsgrad=True)
         if scheduler is None:
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer, mode='min', factor=0.1, patience=4, min_lr=1e-8)
+                optimizer, mode='min', factor=0.1, patience=2, min_lr=1e-8)
         return {'optimizer': optimizer, 'lr_scheduler': scheduler, 'monitor': 'val_loss'}
 
     def _step(self, batch) -> torch.Tensor:
