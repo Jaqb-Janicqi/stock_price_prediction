@@ -31,5 +31,5 @@ class LSTM_tower(nn.Module):
                 x, _ = layer(x, (h_0, c_0))
             else:
                 x = layer(x)
-        # Use only the output of the last time step
-        return x[:, -1, :]
+        x = x[:, -1, :]
+        return self._linear(x)
