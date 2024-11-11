@@ -95,13 +95,13 @@ class DistributedDataset(Dataset):
             data = pd.read_csv(file)[self.cols]
             if type(data) == pd.Series:
                 data = data.to_frame()
+            if self.should_create_features:
+                self.create_features(data)
 
             dataset = PandasDataset(
                 data, self.window_size, data.columns.tolist(), self.target_cols, self.normalize, self.prediction_size)
             if self.normalize:
                 dataset.normalize()
-            if self.should_create_features:
-                self.create_features(dataset.dataframe)
 
             # skip importing empty datasets
             try:
