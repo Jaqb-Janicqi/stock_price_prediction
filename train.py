@@ -108,7 +108,8 @@ def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoad
             normalize=hyperparams['normalize'],
             cols=hyperparams['cols'],
             target_cols=hyperparams['target_cols'],
-            prediction_size=hyperparams['prediction_size']
+            prediction_size=hyperparams['prediction_size'],
+            create_features=hyperparams['create_features']
         )
 
         dataloaders[split] = DataLoader(
@@ -127,10 +128,85 @@ def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoad
 
 def initialize_models(hyperparams: Dict) -> Dict:
     model_dict = {
+        'LSTM_tower': {
+            'class': LSTM_tower,
+            'model_args': {
+                'input_size': 5,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
         'GRU': {
             'class': GRU,
             'model_args': {
-                'input_size': 72,
+                'input_size': 5,
+                'hidden_size': 2048,
+                'num_layers': 8,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': 5,
+                'hidden_size': 2048,
+                'num_layers': 8,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'GRU': {
+            'class': GRU,
+            'model_args': {
+                'input_size': 5,
+                'hidden_size': 2048,
+                'num_layers': 16,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': 5,
+                'hidden_size': 2048,
+                'num_layers': 16,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'GRU': {
+            'class': GRU,
+            'model_args': {
+                'input_size': 5,
+                'hidden_size': 512,
+                'num_layers': 8,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': 5,
+                'hidden_size': 512,
+                'num_layers': 8,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'GRU': {
+            'class': GRU,
+            'model_args': {
+                'input_size': 5,
                 'hidden_size': 256,
                 'num_layers': 8,
                 'output_size': len(hyperparams['target_cols'])
@@ -141,7 +217,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'LSTM': {
             'class': LSTM,
             'model_args': {
-                'input_size': 72,
+                'input_size': 5,
                 'hidden_size': 256,
                 'num_layers': 8,
                 'output_size': len(hyperparams['target_cols'])
@@ -152,7 +228,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'GRU_shallow': {
             'class': GRU,
             'model_args': {
-                'input_size': 72,
+                'input_size': 5,
                 'hidden_size': 256,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
@@ -163,7 +239,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'LSTM_shallow': {
             'class': LSTM,
             'model_args': {
-                'input_size': 72,
+                'input_size': 5,
                 'hidden_size': 256,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
@@ -174,7 +250,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'GRU_small': {
             'class': GRU,
             'model_args': {
-                'input_size': 72,
+                'input_size': 5,
                 'hidden_size': 128,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
@@ -185,7 +261,7 @@ def initialize_models(hyperparams: Dict) -> Dict:
         'LSTM_small': {
             'class': LSTM,
             'model_args': {
-                'input_size': 72,
+                'input_size': 5,
                 'hidden_size': 128,
                 'num_layers': 4,
                 'output_size': len(hyperparams['target_cols'])
@@ -193,21 +269,12 @@ def initialize_models(hyperparams: Dict) -> Dict:
             'lr': hyperparams['lr'],
             'wd': hyperparams['wd']
         },
-        'LSTM_tower': {
-            'class': LSTM_tower,
-            'model_args': {
-                'input_size': 72,
-                'output_size': len(hyperparams['target_cols'])
-            },
+        'DeepLob': {
+            'class': DeepLOB,
+            'model_args': {},
             'lr': hyperparams['lr'],
             'wd': hyperparams['wd']
         },
-        # 'DeepLob': {
-        #     'class': DeepLOB,
-        #     'model_args': {},
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
         # 'ARIMA': {
         #     'class': ARIMA,
         #     'model_args': {
@@ -250,17 +317,19 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'slice_size': 64,
         'num_workers': min(mp.cpu_count(), 8),
         'cols': ['Open', 'High', 'Low', 'Close', 'Volume'],
-        'target_cols': ['Open', 'High', 'Low', 'Close'],
+        # 'target_cols': ['Open', 'High', 'Low', 'Close'],
+        'target_cols': ['Close'],
         'prediction_size': 1,
         'normalize': True,
         'data_prefix': 'sp500',
         'lr': 1e-3,
         'wd': 1e-6,
+        'create_features': False,
         'trainer_params': {
             'gradient_clip_val': 0.5,
             'gradient_clip_algorithm': 'norm',
             'deterministic': True,
-            'max_epochs': 20
+            'max_epochs': 50
         }
     }
 
