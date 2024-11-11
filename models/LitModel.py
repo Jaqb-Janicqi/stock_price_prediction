@@ -6,13 +6,14 @@ import torch.optim as optim
 
 
 class LitModel(lit.LightningModule):
-    def __init__(self, model, lr=1e-2, wd=1e-6, loss_function=nn.MSELoss()) -> None:
+    def __init__(self, model, lr=1e-2, wd=1e-6, loss_function=nn.MSELoss(), save_hparams=False) -> None:
         super(LitModel, self).__init__()
         self._model_instance = model
         self._loss_function = loss_function
         self._lr = lr
         self._wd = wd
-        self.save_hyperparameters()
+        if save_hparams:
+            self.save_hyperparameters()
 
     def forward(self, x) -> torch.Tensor:
         return self._model_instance(x)
