@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 if torch.cuda.is_available():
     torch.set_default_dtype(torch.float32)
     torch.set_default_device('cuda')
-    # torch.set_float32_matmul_precision('high')
+    torch.set_float32_matmul_precision('high')
 
 import pytorch_lightning as lit
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -43,13 +43,13 @@ def torch_train(model_params: Dict, training_params: Dict, callbacks: List[lit.C
         **training_params['trainer_params']
     )
     trainer.fit(model, dataloaders['train'], dataloaders['val'])
-    result = trainer.test(model, list(dataloaders.values()), ckpt_path="best")
+    result = trainer.test(model, dataloaders['test'], ckpt_path="best")
 
     os.makedirs('trained', exist_ok=True)
     filename = ''.join([
         f'trained/{model.model.__class__.__name__}_',
         f'_'.join(str(x) for x in list(model_params['model_args'].values())),
-        f'_tloss-{result[0]["test_loss/dataloader_idx_0"]}',
+        f'_tloss-{result[0]["test_loss"]:.5f}',
         '.ckpt'
     ])
 
