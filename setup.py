@@ -1,17 +1,14 @@
-import os
 import subprocess
+import sys
 
+torch_commands = [
+    'pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124',
+    'pip3 install -r requirements.txt'
+]
+# assert python 3.11.X
+if sys.version_info < (3, 11):
+    print('Please use Python 3.11.X')
+    sys.exit(1)
 
-dependency_dir = 'dependencies'
-if not os.path.exists(dependency_dir):
-    os.makedirs(dependency_dir)
-os.chdir(dependency_dir)
-
-# dependencies
-dependencies = []
-dependencies.append('https://github.com/keithorange/PatternPy')
-
-for dep in dependencies:
-    subprocess.run(['git', 'clone', dep])
-    os.chdir(dep.split('/')[-1])
-    os.chdir('..')
+for command in torch_commands:
+    subprocess.run(command, shell=True)
