@@ -26,7 +26,6 @@ from data_handling.sliceSampler import SliceSampler
 from models.GRU import GRU
 from models.LSTM import LSTM
 from models.LSTM_tower import LSTM_tower
-from models.DeepLOB import DeepLOB
 from models.LitModel import LitModel
 from models.ARIMA import ARIMA
 from models.RidgeRegression import RidgeRegression
