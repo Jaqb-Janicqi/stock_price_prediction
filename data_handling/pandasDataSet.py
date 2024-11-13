@@ -145,3 +145,6 @@ class DistributedDataset(Dataset):
     @used_indices.setter
     def used_indices(self, indices: List[int]):
         self._used_indices = indices
+
+    def reset_indices(self):
+        self._used_indices = list(range(sum([len(dataset) for dataset in self._datasets])))
