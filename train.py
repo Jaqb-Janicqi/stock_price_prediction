@@ -312,6 +312,32 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             train_price = data['Close'][:train_size]
             test_price = data['Close'][train_size:]
 
+            dset = DistributedDataset(
+                directory=f'data/sp500',
+                window_size=1,
+                normalize=True,
+                cols=['Close'],
+                target_cols=['Close'],
+                prediction_size=1,
+                create_features=True
+            )
+            idx_max = len(dset)
+            idx_dist = np.arange(idx_max, dtype=int)
+            idx_test = np.random.choice(idx_dist, len(dset)/3)
+            dset_test = DistributedDataset(
+                directory=f'data/sp500',
+                window_size=1,
+                normalize=True,
+                cols=['Close'],
+                target_cols=['Close'],
+                prediction_size=1,
+                create_features=False
+            )
+            dset_test.used_indices = idx_test
+            dset_train = dset
+            dset_train.used_indices = [idx for idx in idx_dist if idx not in idx_test]
+
+
             # Initialize and fit the model
             arima_model = ARIMA(p=1, d=1, q=1)
 
