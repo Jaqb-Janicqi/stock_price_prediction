@@ -141,50 +141,6 @@ def initialize_models(hyperparams: Dict) -> Dict:
             'class': GRU,
             'model_args': {
                 'input_size': 5,
-                'hidden_size': 2048,
-                'num_layers': 8,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'LSTM': {
-            'class': LSTM,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 2048,
-                'num_layers': 8,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'GRU': {
-            'class': GRU,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 2048,
-                'num_layers': 16,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'LSTM': {
-            'class': LSTM,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 2048,
-                'num_layers': 16,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'GRU': {
-            'class': GRU,
-            'model_args': {
-                'input_size': 5,
                 'hidden_size': 512,
                 'num_layers': 8,
                 'output_size': len(hyperparams['target_cols'])
@@ -269,26 +225,20 @@ def initialize_models(hyperparams: Dict) -> Dict:
             'lr': hyperparams['lr'],
             'wd': hyperparams['wd']
         },
-        'DeepLob': {
-            'class': DeepLOB,
-            'model_args': {},
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
+        'ARIMA': {
+            'class': ARIMA,
+            'model_args': {
+                'p':1,
+                'd':1,
+                'q':1
+            }
         },
-        # 'ARIMA': {
-        #     'class': ARIMA,
-        #     'model_args': {
-        #         'p':1,
-        #         'd':1,
-        #         'q':1
-        #     }
-        # },
-        # 'RidgeRegression':{
-        #     'class': RidgeRegression,
-        #     'model_args': {
-        #         'alpha': 1.0
-        #     }
-        # }
+        'RidgeRegression':{
+            'class': RidgeRegression,
+            'model_args': {
+                'alpha': 1.0
+            }
+        }
     }
     return model_dict
 
@@ -326,8 +276,6 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'wd': 1e-6,
         'create_features': False,
         'trainer_params': {
-            'gradient_clip_val': 0.5,
-            'gradient_clip_algorithm': 'norm',
             'deterministic': True,
             'max_epochs': 50
         }
