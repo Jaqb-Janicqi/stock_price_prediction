@@ -296,7 +296,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
 
         elif issubclass(model_params['class'], ARIMA):
             data = DistributedDataset(
-                directory=f'data/sp500',
+                directory=f'data/sp500train',
                 window_size=1,
                 normalize=True,
                 cols=['Close'],
@@ -304,22 +304,16 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 prediction_size=1,
                 create_features=True
             )
-            idx_max = len(data)
-            idx_dist = np.arange(idx_max, dtype=int)
-            idx_test = np.random.choice(idx_dist, len(data)/3)
-            dset_test = DistributedDataset(
-                directory=f'data/sp500',
+
+            data_test = DistributedDataset(
+                directory=f'data/sp500train',
                 window_size=1,
                 normalize=True,
                 cols=['Close'],
                 target_cols=['Close'],
                 prediction_size=1,
-                create_features=False
+                create_features=True
             )
-            dset_test.used_indices = idx_test
-            dset_train = data
-            dset_train.used_indices = [idx for idx in idx_dist if idx not in idx_test]
-
             # Load training and testing data
             #data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
             data['Datetime'] = pd.to_datetime(data['Datetime'])
