@@ -127,103 +127,103 @@ def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoad
 
 def initialize_models(hyperparams: Dict) -> Dict:
     model_dict = {
-        'LSTM_tower': {
-            'class': LSTM_tower,
-            'model_args': {
-                'input_size': 5,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'GRU': {
-            'class': GRU,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 512,
-                'num_layers': 8,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'LSTM': {
-            'class': LSTM,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 512,
-                'num_layers': 8,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'GRU': {
-            'class': GRU,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 256,
-                'num_layers': 8,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'LSTM': {
-            'class': LSTM,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 256,
-                'num_layers': 8,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'GRU_shallow': {
-            'class': GRU,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 256,
-                'num_layers': 4,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'LSTM_shallow': {
-            'class': LSTM,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 256,
-                'num_layers': 4,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'GRU_small': {
-            'class': GRU,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 128,
-                'num_layers': 4,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
-        'LSTM_small': {
-            'class': LSTM,
-            'model_args': {
-                'input_size': 5,
-                'hidden_size': 128,
-                'num_layers': 4,
-                'output_size': len(hyperparams['target_cols'])
-            },
-            'lr': hyperparams['lr'],
-            'wd': hyperparams['wd']
-        },
+        # 'LSTM_tower': {
+        #     'class': LSTM_tower,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'GRU': {
+        #     'class': GRU,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 512,
+        #         'num_layers': 8,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'LSTM': {
+        #     'class': LSTM,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 512,
+        #         'num_layers': 8,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'GRU': {
+        #     'class': GRU,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 256,
+        #         'num_layers': 8,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'LSTM': {
+        #     'class': LSTM,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 256,
+        #         'num_layers': 8,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'GRU_shallow': {
+        #     'class': GRU,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 256,
+        #         'num_layers': 4,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'LSTM_shallow': {
+        #     'class': LSTM,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 256,
+        #         'num_layers': 4,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'GRU_small': {
+        #     'class': GRU,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 128,
+        #         'num_layers': 4,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'LSTM_small': {
+        #     'class': LSTM,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 128,
+        #         'num_layers': 4,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
         'ARIMA': {
             'class': ARIMA,
             'model_args': {
@@ -295,24 +295,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 torch_plot(training_params, dataloaders, model)
 
         elif issubclass(model_params['class'], ARIMA):
-            #!!! Loading, splitting data go outside the model class !!!
-            # as well as plotting and calculating metrics
-
-            # Load training and testing data
-            data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
-            data['Datetime'] = pd.to_datetime(data['Datetime'])
-            data.set_index('Datetime', inplace=True)
-
-            # Splitted data into train and test
-            # train_data = pd.read_csv('data/sp500train/AAPL_1h.csv', low_memory=False)
-            # test_data = pd.read_csv('data/sp500test/AAPL_1h.csv', low_memory=False)
-
-            # For 0.7 train and 0.3 test split model provides better results than 0.8 train and 0.2 test split
-            train_size = int(len(data)*0.7)
-            train_price = data['Close'][:train_size]
-            test_price = data['Close'][train_size:]
-
-            dset = DistributedDataset(
+            data = DistributedDataset(
                 directory=f'data/sp500',
                 window_size=1,
                 normalize=True,
@@ -321,9 +304,9 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 prediction_size=1,
                 create_features=True
             )
-            idx_max = len(dset)
+            idx_max = len(data)
             idx_dist = np.arange(idx_max, dtype=int)
-            idx_test = np.random.choice(idx_dist, len(dset)/3)
+            idx_test = np.random.choice(idx_dist, len(data)/3)
             dset_test = DistributedDataset(
                 directory=f'data/sp500',
                 window_size=1,
@@ -334,9 +317,22 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 create_features=False
             )
             dset_test.used_indices = idx_test
-            dset_train = dset
+            dset_train = data
             dset_train.used_indices = [idx for idx in idx_dist if idx not in idx_test]
 
+            # Load training and testing data
+            #data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
+            data['Datetime'] = pd.to_datetime(data['Datetime'])
+            data.set_index('Datetime', inplace=True)
+
+            # Splitted data into train and test
+            # train_data = pd.read_csv('data/sp500train/AAPL_1h.csv', low_memory=False)
+            # test_data = pd.read_csv('data/sp500test/AAPL_1h.csv', low_memory=False)
+
+            # For 0.7 train and 0.3 test split model provides better results than 0.8 train and 0.2 test split
+            train_size = int(len(data)*0.7)
+            train_price = dset_train['Close']
+            test_price = dset_test['Close']
 
             # Initialize and fit the model
             arima_model = ARIMA(p=1, d=1, q=1)
@@ -367,9 +363,33 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         elif issubclass(model_params['class'] == RidgeRegression):
             #!!! Loading, splitting data go outside the model class !!!
             # as well as plotting and calculating metrics
-
+            data = DistributedDataset(
+                directory=f'data/sp500',
+                window_size=1,
+                normalize=True,
+                cols=['Close'],
+                target_cols=['Close'],
+                prediction_size=1,
+                create_features=True
+            )
+            idx_max = len(data)
+            idx_dist = np.arange(idx_max, dtype=int)
+            idx_test = np.random.choice(idx_dist, len(data)/3)
+            dset_test = DistributedDataset(
+                directory=f'data/sp500',
+                window_size=1,
+                normalize=True,
+                cols=['Close'],
+                target_cols=['Close'],
+                prediction_size=1,
+                create_features=False
+            )
+            dset_test.used_indices = idx_test
+            dset_train = data
+            dset_train.used_indices = [idx for idx in idx_dist if idx not in idx_test]
+            
             # Load training and testing data
-            data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
+            #data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
             data['Datetime'] = pd.to_datetime(data['Datetime'])
             data.set_index('Datetime', inplace=True)
 
@@ -380,8 +400,8 @@ def train(plot_model_performance=False, model_dict=None) -> None:
 
             # For 0.7 train and 0.3 test split model provides better results than 0.8 train and 0.2 test split
             train_size = int(len(data)*0.7)
-            train_price = data['Close'][:train_size]
-            test_price = data['Close'][train_size:]
+            train_price = dset_train['Close']
+            test_price = dset_test['Close']
 
             # Initialize and fit the model
             ridge_model = RidgeRegression(alpha=1)
