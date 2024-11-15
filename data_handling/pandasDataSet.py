@@ -78,6 +78,14 @@ class PandasDataset(Dataset):
         self._dataframe = value
         self._cols = value.columns.tolist()
 
+    @property
+    def columns(self):
+        return self._cols
+    
+    @columns.setter
+    def columns(self, value):
+        self._cols = value
+
 
 class DistributedDataset(Dataset):
     def __init__(self, directory: str, window_size: int, normalize: bool = False, 
