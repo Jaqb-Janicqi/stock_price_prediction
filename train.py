@@ -319,14 +319,11 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 p_dataset.dataframe['Datetime'] = pd.to_datetime(p_dataset.dataframe['Datetime'], utc=True)
                 p_dataset.dataframe.set_index('Datetime', inplace=True)
                 p_dataset.columns = ['Close']
-                p_dataset.normalize()
 
             for p_dataset in data_test.datasets:
                 p_dataset.dataframe['Datetime'] = pd.to_datetime(p_dataset.dataframe['Datetime'], utc=True)
                 p_dataset.dataframe.set_index('Datetime', inplace=True)
                 p_dataset.columns = ['Close']
-                p_dataset.normalize()
-
                 
             # Initialize and fit the model
             arima_model = ARIMA(p=1, d=1, q=1)
