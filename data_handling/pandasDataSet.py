@@ -69,6 +69,14 @@ class PandasDataset(Dataset):
     def scaler(self, value):
         self._scaler = value
 
+    @property
+    def dataframe(self):
+        return self._dataframe
+    
+    @dataframe.setter
+    def dataframe(self, value):
+        self._dataframe = value
+
 
 class DistributedDataset(Dataset):
     def __init__(self, directory: str, window_size: int, normalize: bool = False, 
@@ -155,3 +163,7 @@ class DistributedDataset(Dataset):
     def cast(self, columns: List[str], dtypes: List[str]):
         for dataset in self._datasets:
             dataset.cast(columns, dtypes)
+
+    @property
+    def datasets(self):
+        return self._datasets
