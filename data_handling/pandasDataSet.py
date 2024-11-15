@@ -53,6 +53,9 @@ class PandasDataset(Dataset):
 
     def denormalize(self, data):
         return self.scaler.inverse_transform(data)
+    
+    def cast(self, columns: List[str], dtypes: List[str]):
+        self._dataframe[columns] = self._dataframe[columns].astype(dtypes)
 
     @property
     def length(self):
@@ -148,3 +151,7 @@ class DistributedDataset(Dataset):
 
     def reset_indices(self):
         self._used_indices = list(range(sum([len(dataset) for dataset in self._datasets])))
+
+    def cast(self, columns: List[str], dtypes: List[str]):
+        for dataset in self._datasets:
+            dataset.cast(columns, dtypes)
