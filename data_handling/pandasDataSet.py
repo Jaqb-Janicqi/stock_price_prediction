@@ -6,7 +6,6 @@ import os
 from typing import List
 from sklearn.preprocessing import MinMaxScaler
 
-from feature_creation import indicators
 
 
 def list_files(directory: str) -> List[str]:
@@ -86,6 +85,7 @@ class DistributedDataset(Dataset):
         self._load_data()
 
     def _create_features(self, df: pd.DataFrame) -> None:
+        from feature_creation import indicators
         indicators.add_candlestick_patterns(df)
         indicators.add_candlestick_patterns(df)
         indicators.add_moving_averages(df)
