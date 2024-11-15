@@ -295,47 +295,47 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 torch_plot(training_params, dataloaders, model)
 
         elif issubclass(model_params['class'], ARIMA):
-            data = DistributedDataset(
-                directory=f'data/sp500train',
-                window_size=1,
-                normalize=True,
-                cols=['Close'],
-                target_cols=['Close'],
-                prediction_size=1,
-                create_features=True
-            )
-
-            data_test = DistributedDataset(
-                directory=f'data/sp500train',
-                window_size=1,
-                normalize=True,
-                cols=['Close'],
-                target_cols=['Close'],
-                prediction_size=1,
-                create_features=True
-            )
             # Load training and testing data
-            #data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
-            data['Datetime'] = pd.to_datetime(data['Datetime'])
-            data.set_index('Datetime', inplace=True)
+            data_train = DistributedDataset(
+                directory=f'data/sp500train',
+                window_size=1,
+                normalize=False,
+                cols=['Datetime', 'Close'],
+                target_cols=['Close'],
+                prediction_size=1,
+                create_features=False
+            )
+            data_test = DistributedDataset(
+                directory=f'data/sp500test',
+                window_size=1,
+                normalize=False,
+                cols=['Datetime', 'Close'],
+                target_cols=['Close'],
+                prediction_size=1,
+                create_features=False
+            )
+            
+            for p_dataset in data_train.datasets:
+                p_dataset.dataframe['Datetime'] = pd.to_datetime(p_dataset.dataframe['Datetime'], utc=True)
+                p_dataset.dataframe.set_index('Datetime', inplace=True)
+                p_dataset.columns = ['Close']
+                p_dataset.normalize()
 
-            # Splitted data into train and test
-            # train_data = pd.read_csv('data/sp500train/AAPL_1h.csv', low_memory=False)
-            # test_data = pd.read_csv('data/sp500test/AAPL_1h.csv', low_memory=False)
+            for p_dataset in data_test.datasets:
+                p_dataset.dataframe['Datetime'] = pd.to_datetime(p_dataset.dataframe['Datetime'], utc=True)
+                p_dataset.dataframe.set_index('Datetime', inplace=True)
+                p_dataset.columns = ['Close']
+                p_dataset.normalize()
 
-            # For 0.7 train and 0.3 test split model provides better results than 0.8 train and 0.2 test split
-            train_size = int(len(data)*0.7)
-            train_price = dset_train['Close']
-            test_price = dset_test['Close']
-
+                
             # Initialize and fit the model
             arima_model = ARIMA(p=1, d=1, q=1)
 
             # Fit the model on training data
-            arima_model.fit(train_price)
+            arima_model.fit(data_train)
 
             # Make predictions on the test set
-            predictions = arima_model.rolling_forecast(test_price)
+            predictions = arima_model.rolling_forecast(data_test)
 
             # Calculate Mean Squared Error
             mse = round(mean_squared_error(test_price, predictions), 2)
