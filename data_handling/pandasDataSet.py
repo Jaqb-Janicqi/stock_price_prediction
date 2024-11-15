@@ -76,6 +76,7 @@ class PandasDataset(Dataset):
     @dataframe.setter
     def dataframe(self, value):
         self._dataframe = value
+        self._cols = value.columns.tolist()
 
 
 class DistributedDataset(Dataset):
