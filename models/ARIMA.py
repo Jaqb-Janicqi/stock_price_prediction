@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from statsmodels.tsa.arima_model import ARIMA as StatsmodelsARIMA
+from statsmodels.tsa.arima.model import ARIMA as StatsmodelsARIMA
 
 class ARIMA:
     def __init__(self, p, d, q):
