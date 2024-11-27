@@ -20,7 +20,7 @@ def check_tensor_shapes(tensors):
 class PandasDataset(Dataset):
     def __init__(self, dataframe: pd.DataFrame, window_size: int, 
                  cols=['Close'], target_cols=['Close'], normalize=False, 
-                 prediction_size=1, drop_null_rows=True):
+                 stationary_tranform=False, prediction_size=1):
         self._dataframe = dataframe
         self._window_size = window_size
         self._cols = cols
@@ -28,11 +28,25 @@ class PandasDataset(Dataset):
         self._should_normalize = normalize
         self._prediction_size = prediction_size
         self._scaler = MinMaxScaler(feature_range=(0, 1))
-        self._drop_null_rows = drop_null_rows
+        self._stationary_transform = stationary_tranform
+        self.replace_zeros()
+        self.fillna()
         if self._should_normalize:
             self.normalize()
-        if self._drop_null_rows:
-            self._dataframe.dropna(axis=0)
+        if self._stationary_transform:
+            self.stationary_transform()
+        self._dataframe.reset_index(drop=True, inplace=True)
+        self.fillna()
+
+    def fillna(self):
+        self._dataframe.fillna(0, inplace=True)
+
+    def replace_zeros(self):
+        self._dataframe = self._dataframe.replace(0, np.nan).ffill().bfill()
+
+    def stationary_transform(self):
+        self._dataframe[self.columns] =\
+              self._dataframe[self.columns].pct_change().dropna()
 
     def __getitem__(self, index: int) -> tuple:
         # select cols for x, and target_cols for y
@@ -48,7 +62,6 @@ class PandasDataset(Dataset):
         return [torch.tensor(np.array(x)).float() for x in zip(*batch)]
 
     def normalize(self):
-        # self.dataframe = (self.dataframe - self.dataframe.mean()) / self.dataframe.std()
         self._dataframe[self._cols] = self.scaler.fit_transform(self._dataframe[self._cols])
 
     def denormalize(self, data):
@@ -89,7 +102,7 @@ class PandasDataset(Dataset):
 
 class DistributedDataset(Dataset):
     def __init__(self, directory: str, window_size: int, normalize: bool = False, 
-                 cols=['Close'], target_cols=['Close'], 
+                 stationary_transform: bool = False, cols=['Close'], target_cols=['Close'], 
                  prediction_size=1, create_features=True):
         self._datasets = []
         self._idx_dist = []
@@ -102,6 +115,7 @@ class DistributedDataset(Dataset):
         self._target_cols = target_cols
         self._prediction_size = prediction_size
         self._should_create_features = create_features
+        self._stationary_transform = stationary_transform
         self._load_data()
 
     def _create_features(self, df: pd.DataFrame) -> None:
@@ -116,13 +130,11 @@ class DistributedDataset(Dataset):
             data = pd.read_csv(file)[self._cols]
             if type(data) == pd.Series:
                 data = data.to_frame()
-            if self._should_create_features:
-                self._create_features(data)
 
             dataset = PandasDataset(
-                data, self._window_size, data.columns.tolist(), self._target_cols, self._normalize, self._prediction_size)
-            if self._normalize:
-                dataset.normalize()
+                data, self._window_size, data.columns.tolist(), self._target_cols, self._normalize, self._stationary_transform, self._prediction_size)
+            if self._should_create_features:
+                dataset.dataframe = self._create_features(dataset.dataframe)
 
             # skip importing empty datasets
             try:
@@ -133,7 +145,7 @@ class DistributedDataset(Dataset):
             idx_sum += len(dataset)
             self._datasets.append(dataset)
             self._idx_dist.append(idx_sum)
-        self._used_indices = list(range(idx_sum))
+        self._used_indices = list(range(idx_sum))       
 
     def __getitem__(self, index: int) -> tuple:
         if index < 0 or index >= len(self):

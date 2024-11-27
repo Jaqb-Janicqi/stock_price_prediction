@@ -55,7 +55,6 @@ def torch_train(model_params: Dict, training_params: Dict, callbacks: List[lit.C
     checkpoint_callback = next(
         x for x in callbacks if isinstance(x, ModelCheckpoint))
     shutil.copy(checkpoint_callback.best_model_path, filename)
-    return model
 
 
 def torch_plot(batch_size: int, train_dataset: DistributedDataset, test_dataset: DistributedDataset,
@@ -108,7 +107,8 @@ def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoad
             cols=hyperparams['cols'],
             target_cols=hyperparams['target_cols'],
             prediction_size=hyperparams['prediction_size'],
-            create_features=hyperparams['create_features']
+            create_features=hyperparams['create_features'],
+            stationary_transform=hyperparams['stationary_transform']
         )
 
         dataloaders[split] = DataLoader(
@@ -127,117 +127,117 @@ def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoad
 
 def initialize_models(hyperparams: Dict) -> Dict:
     model_dict = {
-        # 'LSTM_tower': {
-        #     'class': LSTM_tower,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        # 'GRU': {
-        #     'class': GRU,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'hidden_size': 512,
-        #         'num_layers': 8,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        # 'LSTM': {
-        #     'class': LSTM,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'hidden_size': 512,
-        #         'num_layers': 8,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        # 'GRU': {
-        #     'class': GRU,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'hidden_size': 256,
-        #         'num_layers': 8,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        # 'LSTM': {
-        #     'class': LSTM,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'hidden_size': 256,
-        #         'num_layers': 8,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        # 'GRU_shallow': {
-        #     'class': GRU,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'hidden_size': 256,
-        #         'num_layers': 4,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        # 'LSTM_shallow': {
-        #     'class': LSTM,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'hidden_size': 256,
-        #         'num_layers': 4,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        # 'GRU_small': {
-        #     'class': GRU,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'hidden_size': 128,
-        #         'num_layers': 4,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        # 'LSTM_small': {
-        #     'class': LSTM,
-        #     'model_args': {
-        #         'input_size': 5,
-        #         'hidden_size': 128,
-        #         'num_layers': 4,
-        #         'output_size': len(hyperparams['target_cols'])
-        #     },
-        #     'lr': hyperparams['lr'],
-        #     'wd': hyperparams['wd']
-        # },
-        'ARIMA': {
-            'class': ARIMA,
+        'LSTM_tower': {
+            'class': LSTM_tower,
             'model_args': {
-                'p':1,
-                'd':1,
-                'q':1
-            }
+                'input_size': 1,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
         },
-        'RidgeRegression':{
-            'class': RidgeRegression,
+        # 'GRU': {
+        #     'class': GRU,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 512,
+        #         'num_layers': 8,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        # 'LSTM': {
+        #     'class': LSTM,
+        #     'model_args': {
+        #         'input_size': 5,
+        #         'hidden_size': 512,
+        #         'num_layers': 8,
+        #         'output_size': len(hyperparams['target_cols'])
+        #     },
+        #     'lr': hyperparams['lr'],
+        #     'wd': hyperparams['wd']
+        # },
+        'GRU': {
+            'class': GRU,
             'model_args': {
-                'alpha': 1.0
-            }
-        }
+                'input_size': 1,
+                'hidden_size': 256,
+                'num_layers': 8,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': 1,
+                'hidden_size': 256,
+                'num_layers': 8,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'GRU_shallow': {
+            'class': GRU,
+            'model_args': {
+                'input_size': 1,
+                'hidden_size': 256,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM_shallow': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': 1,
+                'hidden_size': 256,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'GRU_small': {
+            'class': GRU,
+            'model_args': {
+                'input_size': 1,
+                'hidden_size': 128,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        'LSTM_small': {
+            'class': LSTM,
+            'model_args': {
+                'input_size': 1,
+                'hidden_size': 128,
+                'num_layers': 4,
+                'output_size': len(hyperparams['target_cols'])
+            },
+            'lr': hyperparams['lr'],
+            'wd': hyperparams['wd']
+        },
+        # 'ARIMA': {
+        #     'class': ARIMA,
+        #     'model_args': {
+        #         'p':1,
+        #         'd':1,
+        #         'q':1
+        #     }
+        # },
+        # 'RidgeRegression':{
+        #     'class': RidgeRegression,
+        #     'model_args': {
+        #         'alpha': 1.0
+        #     }
+        # }
     }
     return model_dict
 
@@ -265,7 +265,8 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'batch_size': 512,
         'slice_size': 64,
         'num_workers': min(mp.cpu_count(), 8),
-        'cols': ['Open', 'High', 'Low', 'Close', 'Volume'],
+        # 'cols': ['Open', 'High', 'Low', 'Close', 'Volume'],
+        'cols': ['Close'],
         # 'target_cols': ['Open', 'High', 'Low', 'Close'],
         'target_cols': ['Close'],
         'prediction_size': 1,
@@ -274,6 +275,7 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         'lr': 1e-3,
         'wd': 1e-6,
         'create_features': False,
+        'stationary_transform': False,
         'trainer_params': {
             'deterministic': True,
             'max_epochs': 50
@@ -289,10 +291,11 @@ def train(plot_model_performance=False, model_dict=None) -> None:
 
     for model_name, model_params in model_dict.items():
         if issubclass(model_params['class'], nn.Module):
-            model = torch_train(
-                model_params, training_params, create_callbacks(), dataloaders)
-            if plot_model_performance:
-                torch_plot(training_params, dataloaders, model)
+            p = mp.Process(target=torch_train, args=(
+                model_params, training_params, create_callbacks(), dataloaders))
+            p.start()
+            p.join()
+
 
         elif issubclass(model_params['class'], ARIMA):
             # Load training and testing data
@@ -314,17 +317,19 @@ def train(plot_model_performance=False, model_dict=None) -> None:
                 prediction_size=1,
                 create_features=False
             )
-            
+
             for p_dataset in data_train.datasets:
-                p_dataset.dataframe['Datetime'] = pd.to_datetime(p_dataset.dataframe['Datetime'], utc=True)
+                p_dataset.dataframe['Datetime'] = pd.to_datetime(
+                    p_dataset.dataframe['Datetime'], utc=True)
                 p_dataset.dataframe.set_index('Datetime', inplace=True)
                 p_dataset.columns = ['Close']
 
             for p_dataset in data_test.datasets:
-                p_dataset.dataframe['Datetime'] = pd.to_datetime(p_dataset.dataframe['Datetime'], utc=True)
+                p_dataset.dataframe['Datetime'] = pd.to_datetime(
+                    p_dataset.dataframe['Datetime'], utc=True)
                 p_dataset.dataframe.set_index('Datetime', inplace=True)
                 p_dataset.columns = ['Close']
-                
+
             # Initialize and fit the model
             arima_model = ARIMA(p=1, d=1, q=1)
 
@@ -377,10 +382,11 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             )
             dset_test.used_indices = idx_test
             dset_train = data
-            dset_train.used_indices = [idx for idx in idx_dist if idx not in idx_test]
-            
+            dset_train.used_indices = [
+                idx for idx in idx_dist if idx not in idx_test]
+
             # Load training and testing data
-            #data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
+            # data = pd.read_csv('data/sp500/AAPL_1h.csv', low_memory=False)
             data['Datetime'] = pd.to_datetime(data['Datetime'])
             data.set_index('Datetime', inplace=True)
 
@@ -428,9 +434,6 @@ def train(plot_model_performance=False, model_dict=None) -> None:
         else:
             raise ValueError(
                 f"Model {model_name} is not a valid model class")
-
-        # free memory
-        del model
 
 
 if __name__ == '__main__':

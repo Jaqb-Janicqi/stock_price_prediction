@@ -4,6 +4,12 @@ import yfinance as yf
 import talib
 
 
+BROKEN_PATTERNS = ['CDL3STARSINSOUTH', 'CDLABANDONEDBABY', 'CDLBREAKAWAY',
+                   'CDLCONCEALBABYSWALL', 'CDLINNECK', 'CDLKICKING',
+                   'CDLKICKINGBYLENGTH', 'CDLMATHOLD', 'CDLRISEFALL3METHODS',
+                   'CDLUNIQUE3RIVER', 'CDLUPSIDEGAP2CROWS']
+
+
 def get_all_candlestick_patterns() -> List[str]:
     return talib.get_function_groups()['Pattern Recognition']
 
@@ -20,13 +26,15 @@ def add_candlestick_patterns(df: pd.DataFrame) -> pd.DataFrame:
     patterns = get_all_candlestick_patterns()
     ohlc = get_ohlc(df)
     for pattern in patterns:
+        if pattern in BROKEN_PATTERNS:
+            continue
         df[pattern] = getattr(talib, pattern)(*ohlc)
     return df
 
 
 def add_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
     df["SMA"] = talib.SMA(df['Close'].astype(float), timeperiod=3)
-    df["MA"]  = talib.MA(df['Close'].astype(float), timeperiod=3)
+    df["MA"] = talib.MA(df['Close'].astype(float), timeperiod=3)
     df["EMA"] = talib.EMA(df['Close'].astype(float), timeperiod=3)
     df["WMA"] = talib.WMA(df['Close'].astype(float), timeperiod=3)
     df["DEMA"] = talib.DEMA(df['Close'].astype(float), timeperiod=3)
