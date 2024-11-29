@@ -30,12 +30,14 @@ class PandasDataset(Dataset):
         self._stationary_transform = stationary_tranform
         self.replace_zeros()
         self.fillna()
+        self._dataframe.reset_index(drop=True, inplace=True)
+        self.fillna()
+
+    def apply_transform(self):
         if self._should_normalize:
             self.normalize()
         if self._stationary_transform:
             self.stationary_transform()
-        self._dataframe.reset_index(drop=True, inplace=True)
-        self.fillna()
 
     def fillna(self):
         self._dataframe.fillna(0, inplace=True)
@@ -144,7 +146,8 @@ class DistributedDataset(Dataset):
 
             if self._should_create_features:
                 dataset.dataframe = self._create_features(dataset.dataframe)
-
+            dataset.apply_transform()
+            
             idx_sum += len(dataset)
             self._datasets.append(dataset)
             self._idx_dist.append(idx_sum)
