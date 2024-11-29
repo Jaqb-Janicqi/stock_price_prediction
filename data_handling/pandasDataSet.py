@@ -7,7 +7,6 @@ from typing import List
 from sklearn.preprocessing import MinMaxScaler
 
 
-
 def list_files(directory: str) -> List[str]:
     return [os.path.join(directory, file_) for file_ in os.listdir(directory) if os.path.isfile(os.path.join(directory, file_))]
 
@@ -18,8 +17,8 @@ def check_tensor_shapes(tensors):
 
 
 class PandasDataset(Dataset):
-    def __init__(self, dataframe: pd.DataFrame, window_size: int, 
-                 cols=['Close'], target_cols=['Close'], normalize=False, 
+    def __init__(self, dataframe: pd.DataFrame, window_size: int,
+                 cols=['Close'], target_cols=['Close'], normalize=False,
                  stationary_tranform=False, prediction_size=1):
         self._dataframe = dataframe
         self._window_size = window_size
@@ -46,13 +45,14 @@ class PandasDataset(Dataset):
 
     def stationary_transform(self):
         self._dataframe[self.columns] =\
-              self._dataframe[self.columns].pct_change().dropna()
+            self._dataframe[self.columns].pct_change().dropna()
 
     def __getitem__(self, index: int) -> tuple:
         # select cols for x, and target_cols for y
-        x = self._dataframe.iloc[index:index+self._window_size][self._cols].values
+        x = self._dataframe.iloc[index:index +
+                                 self._window_size][self._cols].values
         y = self._dataframe.iloc[index+self._window_size:index +
-                    self._window_size+self._prediction_size][self._target_cols].values        
+                                 self._window_size+self._prediction_size][self._target_cols].values
         return np.array(x), np.array(y)
 
     def __len__(self) -> int:
@@ -62,11 +62,12 @@ class PandasDataset(Dataset):
         return [torch.tensor(np.array(x)).float() for x in zip(*batch)]
 
     def normalize(self):
-        self._dataframe[self._cols] = self.scaler.fit_transform(self._dataframe[self._cols])
+        self._dataframe[self._cols] = self.scaler.fit_transform(
+            self._dataframe[self._cols])
 
     def denormalize(self, data):
         return self.scaler.inverse_transform(data)
-    
+
     def cast(self, columns: List[str], dtypes: List[str]):
         self._dataframe[columns] = self._dataframe[columns].astype(dtypes)
 
@@ -85,7 +86,7 @@ class PandasDataset(Dataset):
     @property
     def dataframe(self):
         return self._dataframe
-    
+
     @dataframe.setter
     def dataframe(self, value):
         self._dataframe = value
@@ -94,15 +95,15 @@ class PandasDataset(Dataset):
     @property
     def columns(self):
         return self._cols
-    
+
     @columns.setter
     def columns(self, value):
         self._cols = value
 
 
 class DistributedDataset(Dataset):
-    def __init__(self, directory: str, window_size: int, normalize: bool = False, 
-                 stationary_transform: bool = False, cols=['Close'], target_cols=['Close'], 
+    def __init__(self, directory: str, window_size: int, normalize: bool = False,
+                 stationary_transform: bool = False, cols=['Close'], target_cols=['Close'],
                  prediction_size=1, create_features=True):
         self._datasets = []
         self._idx_dist = []
@@ -133,8 +134,6 @@ class DistributedDataset(Dataset):
 
             dataset = PandasDataset(
                 data, self._window_size, data.columns.tolist(), self._target_cols, self._normalize, self._stationary_transform, self._prediction_size)
-            if self._should_create_features:
-                dataset.dataframe = self._create_features(dataset.dataframe)
 
             # skip importing empty datasets
             try:
@@ -142,15 +141,19 @@ class DistributedDataset(Dataset):
                     continue
             except:
                 continue
+
+            if self._should_create_features:
+                dataset.dataframe = self._create_features(dataset.dataframe)
+
             idx_sum += len(dataset)
             self._datasets.append(dataset)
             self._idx_dist.append(idx_sum)
-        self._used_indices = list(range(idx_sum))       
+        self._used_indices = list(range(idx_sum))
 
     def __getitem__(self, index: int) -> tuple:
         if index < 0 or index >= len(self):
             raise IndexError
-        
+
         # map index with used indices
         index = self._used_indices[index]
 
@@ -169,17 +172,18 @@ class DistributedDataset(Dataset):
     @property
     def target_size(self) -> int:
         return len(self._target_cols)
-    
+
     @property
     def used_indices(self):
         return self._used_indices
-    
+
     @used_indices.setter
     def used_indices(self, indices: List[int]):
         self._used_indices = indices
 
     def reset_indices(self):
-        self._used_indices = list(range(sum([len(dataset) for dataset in self._datasets])))
+        self._used_indices = list(
+            range(sum([len(dataset) for dataset in self._datasets])))
 
     def cast(self, columns: List[str], dtypes: List[str]):
         for dataset in self._datasets:
