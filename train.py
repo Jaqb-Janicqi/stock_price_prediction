@@ -1,5 +1,6 @@
 import multiprocessing as mp
 import os
+import pickle
 from typing import List, Dict
 import shutil
 
@@ -355,6 +356,22 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             plt.title("ARIMA Model Prediction")
             plt.legend()
             plt.show()
+            
+            os.makedirs('trained', exist_ok=True)
+
+            filename = os.path.join(
+                'trained',
+                f'ARIMA_{arima_model.p}-{arima_model.d}-{arima_model.q}_mse-{mse:.5f}.ckpt'
+            )
+
+            print(f'Saving model to {filename}')
+
+            try:
+                with open(filename, 'wb') as file:
+                    pickle.dump(arima_model, file)
+                print(f"Model successfully saved to {filename}")
+            except Exception as e:
+                print(f"Error saving the model: {e}")
 
         elif issubclass(model_params['class'] == RidgeRegression):
             #!!! Loading, splitting data go outside the model class !!!
@@ -428,6 +445,23 @@ def train(plot_model_performance=False, model_dict=None) -> None:
             plt.title("Ridge Regression Model Prediction")
             plt.legend()
             plt.show()
+            
+            os.makedirs('trained', exist_ok=True)
+
+            filename = os.path.join(
+                'trained',
+                f'RidgeRegression_{ridge_model.alpha}_mse-{mse:.5f}.ckpt'
+            )
+
+            print(f'Saving model to {filename}')
+
+            try:
+                with open(filename, 'wb') as file:
+                    pickle.dump(ridge_model, file)
+                print(f"Model successfully saved to {filename}")
+            except Exception as e:
+                print(f"Error saving the model: {e}")
+                
         # elif issubclass(model_params['class'], a):
         #     pass
 
