@@ -36,6 +36,8 @@ class PandasDataset(Dataset):
             self.normalize()
         if self._stationary_transform:
             self.stationary_transform()
+        self.fillna()
+        self.replace_zeros()
 
     def fillna(self):
         self._dataframe.fillna(0, inplace=True)
