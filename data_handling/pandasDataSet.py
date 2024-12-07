@@ -143,7 +143,8 @@ class DistributedDataset(Dataset):
                 continue
 
             if self._should_create_features:
-                dataset.dataframe = self._create_features(dataset.dataframe)
+                self._create_features(dataset.dataframe)
+                dataset.columns = dataset.dataframe.columns.tolist()
             dataset.apply_transform()
             
             idx_sum += len(dataset)
