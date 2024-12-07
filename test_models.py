@@ -82,12 +82,12 @@ def test_models():
 
     for model_name in os.listdir("trained"):
         try:
-            m_class, m_str, num_source, num_target, hidden_size, num_layers, transformation = model_name.split(
+            m_class, num_source, num_target, hidden_size, num_layers, transformation = model_name.split(
                 '_')
             hidden_size = int(hidden_size)
             num_layers = int(num_layers)
         except:
-            m_class, m_str, num_source, num_target, transformation = model_name.split(
+            m_class, num_source, num_target, transformation = model_name.split(
                 '_')
         model_class = model_dict[m_class]
 
@@ -103,7 +103,6 @@ def test_models():
             training_params['normalize'] = True
 
         training_params['create_features'] = False
-
         if num_source == '1':
             training_params['cols'] = ['Close']
         elif num_source == '5':
