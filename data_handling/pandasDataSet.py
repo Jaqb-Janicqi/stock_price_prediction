@@ -29,15 +29,15 @@ class PandasDataset(Dataset):
         self._scaler = MinMaxScaler(feature_range=(0, 1))
         self._stationary_transform = stationary_tranform
         self.replace_zeros()
-        self.fillna()
         self._dataframe.reset_index(drop=True, inplace=True)
-        self.fillna()
 
     def apply_transform(self):
         if self._should_normalize:
             self.normalize()
         if self._stationary_transform:
             self.stationary_transform()
+        self.fillna()
+        self.replace_zeros()
 
     def fillna(self):
         self._dataframe.fillna(0, inplace=True)
@@ -145,7 +145,8 @@ class DistributedDataset(Dataset):
                 continue
 
             if self._should_create_features:
-                dataset.dataframe = self._create_features(dataset.dataframe)
+                self._create_features(dataset.dataframe)
+                dataset.columns = dataset.dataframe.columns.tolist()
             dataset.apply_transform()
             
             idx_sum += len(dataset)
