@@ -98,9 +98,9 @@ def torch_plot(batch_size: int, train_dataset: DistributedDataset, test_dataset:
             plt.show()
 
 
-def prepare_dataloaders(hyperparams: Dict, window_size=30) -> Dict[str, DataLoader]:
+def prepare_dataloaders(hyperparams: Dict, window_size=30, sets=['train', 'test', 'val']) -> Dict[str, DataLoader]:
     dataloaders = {}
-    for split in ['train', 'test', 'val']:
+    for split in sets:
         dset = DistributedDataset(
             directory=f'data/{hyperparams["data_prefix"]}{split}',
             window_size=window_size,
