@@ -18,11 +18,11 @@ from train import prepare_dataloaders
 
 
 def evaluate_model(model_name, model_class, hidden_size, num_layers, result_queue, training_params):
-    dataloaders = prepare_dataloaders(training_params)
+    dataloaders = prepare_dataloaders(training_params, sets=['test'])
 
     try:
         model = model_class(
-            input_size=len(training_params['cols']),
+            input_size=training_params['input_size'],
             hidden_size=hidden_size,
             num_layers=num_layers,
             output_size=len(training_params['target_cols'])
@@ -37,8 +37,6 @@ def evaluate_model(model_name, model_class, hidden_size, num_layers, result_queu
         os.path.join('trained', model_name),
         model=model
     )
-
-    dataloaders = prepare_dataloaders(training_params)
     trainer = lit.Trainer(**training_params['trainer_params'])
     mse = trainer.test(lit_model, dataloaders['test'])[0]['test_loss']
 
@@ -52,6 +50,7 @@ def test_models():
         'num_workers': min(mp.cpu_count(), 8),
         # 'cols': ['Open', 'High', 'Low', 'Close', 'Volume'],
         'cols': ['Close'],
+        'input_size': 1,
         # 'target_cols': ['Open', 'High', 'Low', 'Close'],
         'target_cols': ['Close'],
         'prediction_size': 1,
@@ -105,12 +104,15 @@ def test_models():
         training_params['create_features'] = False
         if num_source == '1':
             training_params['cols'] = ['Close']
+            training_params['input_size'] = 1
         elif num_source == '5':
             training_params['cols'] = [
                 'Open', 'High', 'Low', 'Close', 'Volume']
+            training_params['input_size'] = 5
         else:
-            ['Open', 'High', 'Low', 'Close', 'Volume']
+            training_params['cols'] = ['Open', 'High', 'Low', 'Close', 'Volume']
             training_params['create_features'] = True
+            training_params['input_size'] = 61
 
         training_params['target_cols'] = ['Close'] if num_target == '1' else [
             'Open', 'High', 'Low', 'Close']
