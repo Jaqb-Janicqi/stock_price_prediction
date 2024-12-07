@@ -17,36 +17,35 @@ from data_handling.pandasDataSet import PandasDataset
 from train import prepare_dataloaders
 
 
-TRAINED_PATHS = ['trained_normalized', 'trained_stationary']
-
-
-def evaluate_model(path, file, training_params, model_class, hidden_size, num_layers, result_queue):
+def evaluate_model(model_name, model_class, hidden_size, num_layers, result_queue, training_params):
     dataloaders = prepare_dataloaders(training_params)
 
-    if model_class == LSTM_tower:
-        model = model_class(
-            input_size=len(training_params['cols']),
-            output_size=len(training_params['target_cols'])
-        )
-    else:
+    try:
         model = model_class(
             input_size=len(training_params['cols']),
             hidden_size=hidden_size,
             num_layers=num_layers,
             output_size=len(training_params['target_cols'])
         )
+    except:
+        model = model_class(
+            input_size=len(training_params['cols']),
+            output_size=len(training_params['target_cols'])
+        )
 
     lit_model = LitModel.load_from_checkpoint(
-        os.path.join(path, file),
+        os.path.join('trained', model_name),
         model=model
     )
 
+    dataloaders = prepare_dataloaders(training_params)
     trainer = lit.Trainer(**training_params['trainer_params'])
     mse = trainer.test(lit_model, dataloaders['test'])[0]['test_loss']
+
     result_queue.put(mse)
 
 
-def find_best_models():
+def test_models():
     training_params = {
         'batch_size': 512,
         'slice_size': 64,
@@ -75,68 +74,58 @@ def find_best_models():
     }
 
     columns = [
-        'model_name', 'input_size', 'output_size', 'hidden_size', 'num_layers', 'transform', 'mse']
+        'model_name', 'class_name', 'input_size', 'output_size', 'hidden_size', 'num_layers', 'transform', 'mse']
 
-    for path in TRAINED_PATHS:
-        files = os.listdir(path)
-        files.sort()
-        if path.endswith('stationary'):
+    if not os.path.exists('model_results.csv'):
+        with open('model_results.csv', 'w') as f:
+            f.write(','.join(columns) + '\n')
+
+    for model_name in os.listdir("trained"):
+        try:
+            m_class, m_str, num_source, num_target, hidden_size, num_layers, transformation = model_name.split(
+                '_')
+            hidden_size = int(hidden_size)
+            num_layers = int(num_layers)
+        except:
+            m_class, m_str, num_source, num_target, transformation = model_name.split(
+                '_')
+        model_class = model_dict[m_class]
+
+        with open('model_results.csv', 'r') as f:
+            if model_name in f.read():
+                continue
+
+        if transformation == 'stationary':
             training_params['stationary_transform'] = True
             training_params['normalize'] = False
         else:
             training_params['stationary_transform'] = False
             training_params['normalize'] = True
 
-        for file in files:
-            if 'tower' in file:
-                model_params = file.split('_')
-                model_params[0] = 'LSTM_tower'
-                model_params.pop(1)
-            else:
-                model_params = file.split('_')
+        training_params['create_features'] = False
 
-            model_class = model_dict[model_params[0]]
-            training_params['create_features'] = False
-            if model_params[1] == '1':
-                training_params['cols'] = ['Close']
-            elif model_params[1] == '5':
-                training_params['cols'] = [
-                    'Open', 'High', 'Low', 'Close', 'Volume']
-            else:
-                training_params['cols'] = [
-                    'Open', 'High', 'Low', 'Close', 'Volume']
-                training_params['create_features'] = True
+        if num_source == '1':
+            training_params['cols'] = ['Close']
+        elif num_source == '5':
+            training_params['cols'] = [
+                'Open', 'High', 'Low', 'Close', 'Volume']
+        else:
+            ['Open', 'High', 'Low', 'Close', 'Volume']
+            training_params['create_features'] = True
 
-            if model_params[0] == 'LSTM_tower':
-                hidden_size = None
-                num_layers = None
-            else:
-                hidden_size = int(model_params[2])
-                num_layers = int(model_params[3])
+        training_params['target_cols'] = ['Close'] if num_target == '1' else [
+            'Open', 'High', 'Low', 'Close']
 
-            if model_params[-2] == '1':
-                training_params['target_cols'] = ['Close']
-            else:
-                training_params['target_cols'] = [
-                    'Open', 'High', 'Low', 'Close']
+        result_queue = mp.Queue()
+        p = mp.Process(target=evaluate_model, args=(
+            model_name, model_class, hidden_size, num_layers, result_queue, training_params))
+        p.start()
+        p.join()
+        mse = result_queue.get()
 
-            if os.path.exists('model_results.csv'):
-                with open('model_results.csv', 'r') as f:
-                    # check if the model has already been evaluated
-                    model = f'{model_params[0]},{len(training_params["cols"])},{len(training_params["target_cols"])},{hidden_size},{num_layers},{"stationary" if training_params["stationary_transform"] else "normalized"}'
-                    if model in f.read():
-                        continue
-
-            print(file)
-            result_queue = mp.Queue()
-            process = mp.Process(target=evaluate_model, args=(
-                path, file, training_params, model_class, hidden_size, num_layers, result_queue))
-            process.start()
-            process.join()
-            mse = result_queue.get()
-
-            with open('model_results.csv', 'a') as f:
-                f.write(f'{model_params[0]},{len(training_params["cols"])},{len(training_params["target_cols"])},{hidden_size},{num_layers},{"stationary" if training_params["stationary_transform"] else "normalized"},{mse}\n')
+        with open('model_results.csv', 'a') as f:
+            f.write(
+                f'{model_name},{model_name.split("_")[0]},{len(training_params["cols"])},{len(training_params["target_cols"])},{hidden_size},{num_layers},{"stationary" if training_params["stationary_transform"] else "normalized"},{mse}\n')
 
 
 def compare_models():
@@ -212,9 +201,9 @@ def compare_models():
             mse = trainer.test(lit_model, dataloader)[0]['test_loss']
 
             with open('model_results_compare.csv', 'a') as f:
-                f.write(f'{model_params[0]},{len(training_params["cols"])},{len(training_params["target_cols"])},{hidden_size},{num_layers},{"stationary" if training_params["stationary_transform"] else "normalized"},{file.split('.')[1]},{mse}\n')
+                f.write(f'{model_params[0]},{len(training_params["cols"])},{len(training_params["target_cols"])},{hidden_size},{num_layers},{"stationary" if training_params["stationary_transform"] else "normalized"},{file.split(".")[1]},{mse}\n')
 
 
 if __name__ == '__main__':
-    # find_best_models()
-    compare_models()
+    test_models()
+    # compare_models()
