@@ -29,7 +29,7 @@ def evaluate_model(model_name, model_class, hidden_size, num_layers, result_queu
         )
     except:
         model = model_class(
-            input_size=len(training_params['cols']),
+            input_size=training_params['input_size'],
             output_size=len(training_params['target_cols'])
         )
 
@@ -80,14 +80,17 @@ def test_models():
             f.write(','.join(columns) + '\n')
 
     for model_name in os.listdir("trained"):
-        try:
-            m_class, num_source, num_target, hidden_size, num_layers, transformation = model_name.split(
-                '_')
+        split = model_name.split('_')
+        if len(split) == 6:
+            m_class, num_source, num_target, hidden_size, num_layers, transformation = split
             hidden_size = int(hidden_size)
             num_layers = int(num_layers)
-        except:
-            m_class, num_source, num_target, transformation = model_name.split(
-                '_')
+        else:
+            m_class = split[0] + '_' + split[1]
+            num_source = split[2]
+            num_target = split[3]
+            transformation = split[4]
+                
         model_class = model_dict[m_class]
 
         with open('model_results.csv', 'r') as f:
