@@ -29,9 +29,7 @@ class PandasDataset(Dataset):
         self._scaler = MinMaxScaler(feature_range=(0, 1))
         self._stationary_transform = stationary_tranform
         self.replace_zeros()
-        self.fillna()
         self._dataframe.reset_index(drop=True, inplace=True)
-        self.fillna()
 
     def apply_transform(self):
         if self._should_normalize:
