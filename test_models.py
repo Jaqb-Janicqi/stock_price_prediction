@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import os
 
+import numpy as np
 import pandas as pd
 import torch
 if torch.cuda.is_available():
@@ -90,7 +91,7 @@ def test_models():
             num_source = split[2]
             num_target = split[3]
             transformation = split[4]
-                
+
         model_class = model_dict[m_class]
 
         with open('model_results.csv', 'r') as f:
@@ -113,7 +114,8 @@ def test_models():
                 'Open', 'High', 'Low', 'Close', 'Volume']
             training_params['input_size'] = 5
         else:
-            training_params['cols'] = ['Open', 'High', 'Low', 'Close', 'Volume']
+            training_params['cols'] = [
+                'Open', 'High', 'Low', 'Close', 'Volume']
             training_params['create_features'] = True
             training_params['input_size'] = 61
 
@@ -208,6 +210,101 @@ def compare_models():
                 f.write(f'{model_params[0]},{len(training_params["cols"])},{len(training_params["target_cols"])},{hidden_size},{num_layers},{"stationary" if training_params["stationary_transform"] else "normalized"},{file.split(".")[1]},{mse}\n')
 
 
+def create_features(df: pd.DataFrame) -> None:
+    from feature_creation import indicators
+    indicators.add_candlestick_patterns(df)
+    indicators.add_candlestick_patterns(df)
+    indicators.add_moving_averages(df)
+
+
+def evaluate_best_models():
+    best_path = 'best'
+    # load models
+    gru = GRU(input_size=1, hidden_size=128, output_size=1, num_layers=4)
+    lit_gru = LitModel.load_from_checkpoint(
+        os.path.join(best_path, 'GRU_1_1_128_4_stationary'),
+        model=gru
+    )
+    lstm_tower = LSTM_tower(input_size=61, output_size=4)
+    lit_lstm_tower = LitModel.load_from_checkpoint(
+        os.path.join(best_path, 'LSTM_tower_61_4_stationary'),
+        model=lstm_tower
+    )
+
+    error_dict = {}
+    data_path = 'data_ohlcv'
+
+    if os.path.exists('results'):
+        for file in os.listdir('results'):
+            os.remove(os.path.join('results', file))
+    else:
+        os.mkdir('results')
+
+    for file in os.listdir(data_path):
+        df = pd.read_csv(os.path.join(data_path, file))[['Close']]
+        dataset_gru = PandasDataset(
+            df,
+            window_size=30,
+            cols=['Close'],
+            target_cols=['Close'],
+            stationary_tranform=True
+        )
+        dataset_gru.apply_transform()
+        dataset_gru.dataframe = dataset_gru.dataframe[int(0.7*len(df)):]
+
+
+        df = pd.read_csv(os.path.join(data_path, file))[['Open', 'High', 'Low', 'Close', 'Volume']]
+        dataset_lstm_tower = PandasDataset(
+            df,
+            window_size=30,
+            cols=['Open', 'High', 'Low', 'Close', 'Volume'],
+            target_cols=['Open', 'High', 'Low', 'Close'],
+            stationary_tranform=True
+        )
+        create_features(dataset_lstm_tower.dataframe)
+        dataset_lstm_tower.apply_transform()
+        dataset_lstm_tower.columns = dataset_lstm_tower.dataframe.columns.tolist()
+        dataset_lstm_tower.dataframe = dataset_lstm_tower.dataframe[int(0.7*len(df)):]
+
+        gru_y, gru_pred = [], []
+        for idx in range(len(dataset_gru)):
+            x, y = dataset_gru[idx]
+            x_source, y_source = dataset_gru.get_original_data(idx)
+            x_source = x_source[-1]
+            y_hat = lit_gru(torch.tensor(x).unsqueeze(0).float()).cpu().detach().numpy()
+            y_pred = x_source + x_source * y_hat
+            gru_y.append(y_source)
+            gru_pred.append(y_pred)
+        gru_mse = np.mean((np.array(gru_y) - np.array(gru_pred))**2)
+        error_dict[f'gru_{file.split(".")[0]}'] = gru_mse
+
+        with open(f'results\\results_gru_{file.split(".")[0]}.csv', 'w') as f:
+            f.write('y,pred\n')
+            for y, pred in zip(gru_y, gru_pred):
+                f.write(f'{y},{pred}\n')
+
+        lstm_tower_y, lstm_tower_y_pred = [], []
+        for idx in range(len(dataset_lstm_tower)):
+            x, y = dataset_lstm_tower[idx]
+            x_source, y_source = dataset_lstm_tower.get_original_data(idx)
+            x_source = x_source[-1][-2]
+            y_hat = lit_lstm_tower(torch.tensor(x).unsqueeze(0).float()).cpu().detach().numpy()
+            y_pred = x_source + x_source * y_hat[0][-1]
+            lstm_tower_y.append(y_source[0][-1])
+            lstm_tower_y_pred.append(y_pred)
+        lstm_tower_mse = np.mean((np.array(lstm_tower_y) - np.array(lstm_tower_y_pred))**2)
+        error_dict[f'lstm_tower_{file.split(".")[0]}'] = lstm_tower_mse
+
+        with open(f'results\\results_lstm_tower_{file.split(".")[0]}.csv', 'w') as f:
+            f.write('y,pred\n')
+            for y, pred in zip(lstm_tower_y, lstm_tower_y_pred):
+                f.write(f'{y},{pred}\n')
+
+    err_df = pd.DataFrame.from_dict(error_dict, orient='index', columns=['mse'])
+    err_df.to_csv('results\\errors.csv')
+
+
 if __name__ == '__main__':
-    test_models()
+    evaluate_best_models()
+    # test_models()
     # compare_models()
