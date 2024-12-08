@@ -1,3 +1,4 @@
+model_name,class_name,input_size,output_size,hidden_size,num_layers,transform,mse
 GRU_1_1_128_4_normalized,GRU,1,1,128,4,normalized,0.0016546046826988459
 GRU_1_1_128_4_stationary,GRU,1,1,128,4,stationary,5.139634959050454e-05
 GRU_1_1_256_4_normalized,GRU,1,1,256,4,normalized,0.0016685064183548093
