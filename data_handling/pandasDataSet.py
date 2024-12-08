@@ -21,6 +21,7 @@ class PandasDataset(Dataset):
                  cols=['Close'], target_cols=['Close'], normalize=False,
                  stationary_tranform=False, prediction_size=1):
         self._dataframe = dataframe
+        self._original_dataframe = dataframe.copy()
         self._window_size = window_size
         self._cols = cols
         self._target_cols = target_cols
@@ -54,6 +55,14 @@ class PandasDataset(Dataset):
         x = self._dataframe.iloc[index:index +
                                  self._window_size][self._cols].values
         y = self._dataframe.iloc[index+self._window_size:index +
+                                 self._window_size+self._prediction_size][self._target_cols].values
+        return np.array(x), np.array(y)
+    
+    def get_original_data(self, index: int) -> tuple:
+        # select cols for x, and target_cols for y
+        x = self._original_dataframe.iloc[index:index +
+                                 self._window_size][self._cols].values
+        y = self._original_dataframe.iloc[index+self._window_size:index +
                                  self._window_size+self._prediction_size][self._target_cols].values
         return np.array(x), np.array(y)
 
