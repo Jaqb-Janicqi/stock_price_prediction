@@ -1,8 +1,14 @@
 # ignore data
-data/
+data
 
 # ignore all cache
-**/__pycache__/
+**/__pycache__
 
 # ignore lightning_logs
 lightning_logs
+
+# ignore vscode config
+.vscode
+
+# ignore model checkpoints
+checkpoints
