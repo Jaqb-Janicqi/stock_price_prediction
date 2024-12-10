@@ -29,29 +29,75 @@ def create_features(df: pd.DataFrame) -> None:
     indicators.add_moving_averages(df)
 
 
-def create_candlestick_chart(df, ticker, start_date, end_date):
+def create_candlestick_chart(df, prediction, ticker, start_date, end_date):
     tmp_df = df[(df.index >= start_date) & (df.index <= end_date)]
     candle_chart = go.Candlestick(
         x=tmp_df.index,
         open=tmp_df['Open'],
         high=tmp_df['High'],
         low=tmp_df['Low'],
-        close=tmp_df['Close']
+        close=tmp_df['Close'],
+        name='Stock Price'
     )
     del tmp_df
     layout = go.Layout(
         title=f'{ticker} Stock Price',
         xaxis_title='Date',
         yaxis_title='Price',
-        xaxis_rangeslider_visible=True
+        xaxis_rangeslider_visible=False,
     )
-
-    fig = go.Figure(data=[candle_chart], layout=layout)
-    fig.update_yaxes(autorange=True)
+    higlight = go.Candlestick(
+        x=prediction.index,
+        open=prediction['Open'],
+        high=prediction['High'],
+        low=prediction['Low'],
+        close=prediction['Close'],
+        name='Prediction',
+        increasing_line_color='#FFFFFF'.lower(),
+        decreasing_line_color='#FFFFFF'.lower()
+    )
+    fig = go.Figure(data=[candle_chart, higlight], layout=layout)
     return fig
 
 
+def get_dataset(df, input_size, output_size, transformation):
+    stationary_transform = True if transformation == 'stationary' else False
+    normalize = True if transformation == 'normalize' else False
+    if input_size == 1:
+        cols = ['Close']
+    else:
+        cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+    if output_size == 1:
+        target_cols = ['Close']
+    else:
+        target_cols = ['Open', 'High', 'Low', 'Close']
+
+    dataset = pdat(df, 30, cols=cols, target_cols=target_cols,
+                   stationary_tranform=stationary_transform, normalize=normalize)
+    if input_size > 5:
+        # print(dataset.dataframe.columns)
+        create_features(dataset.dataframe)
+        dataset.columns = dataset.dataframe.columns.tolist()
+    dataset.apply_transform()
+    return dataset
+
+
+def train_statistical_model(model_name, stock, df):
+    pass
+
+
 def load_statistical_model(model_name, stock, df):
+    m_dir = os.listdir(STATISTICAL_MODEL_DIR)
+    matching_models = [m for m in m_dir if model_name in m and stock in m]
+    if len(matching_models) == 0:
+        model = train_statistical_model(model_name, stock, df)
+    else:
+        model = None
+    return model
+
+
+def predict_statistical_model(model_name, stock, df):
+    model = load_statistical_model(model_name, stock, df)
     pass
 
 
@@ -80,37 +126,12 @@ def load_ml_model(model_name):
         return None
 
 
-def predict_statistical_model(model_name, stock, df):
-    pass
-
-
-def get_dataset(df, input_size, output_size, transformation):
-    stationary_transform = True if transformation == 'stationary' else False
-    normalize = True if transformation == 'normalize' else False
-    if input_size == 1:
-        cols = ['Close']
-    else:
-        cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-    if output_size == 1:
-        target_cols = ['Close']
-    else:
-        target_cols = ['Open', 'High', 'Low', 'Close']
-
-    dataset = pdat(df, 30, cols=cols, target_cols=target_cols,
-                   stationary_tranform=stationary_transform, normalize=normalize)
-    if input_size > 5:
-        # print(dataset.dataframe.columns)
-        create_features(dataset.dataframe)
-        dataset.columns = dataset.dataframe.columns.tolist()
-    dataset.apply_transform()
-    return dataset
-
-
 def predict_ml_model(model_name, df):
     model = load_ml_model(model_name)
     dataset = get_dataset(df, model.input_size,
                           model.output_size, model.transformation)
-    pred = model(torch.tensor(dataset.last_X).unsqueeze(0).float()).cpu().detach().numpy()
+    pred = model(torch.tensor(dataset.last_X).unsqueeze(
+        0).float()).cpu().detach().numpy()
     return dataset.last_true_candle + pred * dataset.last_true_candle
 
 
@@ -123,23 +144,19 @@ def get_prediction(model, stock, df):
         return None
 
 
-def add_prediction_to_df(df, prediction: np.ndarray):
+def wrangle_ml_prediction(df, prediction: np.ndarray):
     if prediction is None:
         return
     prediction = prediction.round(2)
-    new_row = np.array([np.nan] * len(df.columns))
-    p_shape = prediction.shape[1]
-    if p_shape == 1:
-        new_row[0] = prediction[0][0]
-        new_row[1] = prediction[0][0]
-        new_row[2] = prediction[0][0]
-        new_row[3] = prediction[0][0]
+    if prediction.shape[1] == 1:
+        new_row = np.full(4, prediction[0][0])
     else:
-        new_row[0] = prediction[0][0]
-        new_row[1] = prediction[0][1]
-        new_row[2] = prediction[0][2]
-        new_row[3] = prediction[0][3]
-    df.loc[df.index[-1] + datetime.timedelta(hours=1)] = new_row
+        new_row = np.array(prediction[0][:])
+    n_index = [df.index[-1] + datetime.timedelta(hours=1)]
+    predict_df = pd.DataFrame(
+        [new_row], columns=['Open', 'High', 'Low', 'Close'], index=n_index)
+    return predict_df
+
 
 def main():
     st.title('Stock Price App')
@@ -166,7 +183,7 @@ def main():
         'End Date', value=datetime.datetime.now().strftime('%Y-%m-%d'))
 
     model = st.sidebar.selectbox(
-        'Select a model', STATISTICAL_MODELS + ML_MODELS)
+        'Select a model. LSTM predicts an entire future candle, others predict close price.', STATISTICAL_MODELS + ML_MODELS)
 
     if st.sidebar.button('Submit'):
         df = download_ticker(stock, '1h', cols=[
@@ -174,11 +191,11 @@ def main():
         if df is None:
             st.write('No data found')
         else:
-            prediction = get_prediction(model, stock, df.copy())
-            add_prediction_to_df(df, prediction)
+            prediction = wrangle_ml_prediction(
+                df, get_prediction(model, stock, df.copy()))
 
             st.plotly_chart(create_candlestick_chart(
-                df, stock, start_date, end_date), use_container_width=True)
+                df, prediction, stock, start_date, end_date), use_container_width=True)
 
 
 if __name__ == '__main__':
