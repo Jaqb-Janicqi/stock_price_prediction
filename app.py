@@ -5,7 +5,7 @@ from data_handling.yfiDownloader import download_ticker
 import plotly.graph_objs as go
 import time
 import datetime
-from data_handling.pandasDataSet import PandasDataSet
+from data_handling.pandasDataSet import PandasDataset as pdat
 from models.GRU import GRU
 from models.LSTM_tower import LSTM_tower
 from models.LitModel import LitModel
@@ -15,6 +15,13 @@ STATISTICAL_MODELS = ['ARIMA', 'ARIMA-GARCH', 'RidgeRegression']
 ML_MODELS = ['LSTM', 'GRU']
 ML_MODEL_DIR = 'best_ml_models'
 STATISTICAL_MODEL_DIR = 'trained_statistical'
+
+
+def create_features(df: pd.DataFrame) -> None:
+    from feature_creation import indicators
+    indicators.add_candlestick_patterns(df)
+    indicators.add_candlestick_patterns(df)
+    indicators.add_moving_averages(df)
 
 
 def create_candlestick_chart(df, ticker, start_date, end_date):
@@ -39,7 +46,6 @@ def create_candlestick_chart(df, ticker, start_date, end_date):
     return fig
 
 
-
 def load_statistical_model(model_name, stock, df):
     pass
 
@@ -51,25 +57,53 @@ def load_ml_model(model_name):
             os.path.join(ML_MODEL_DIR, 'LSTM_tower_61_4_stationary'),
             model=lstm_tower
         )
+        lit_lstm_tower.model.eval()
+        lit_lstm_tower.model.freeze()
+        lit_lstm_tower.transformation = 'stationary'
         return lit_lstm_tower
-    
+
     elif model_name == 'GRU':
         gru = GRU(input_size=1, hidden_size=128, output_size=1, num_layers=4)
         lit_gru = LitModel.load_from_checkpoint(
             os.path.join(ML_MODEL_DIR, 'GRU_1_1_128_4_stationary'),
             model=gru
         )
+        lit_gru.model.eval()
+        lit_gru.model.freeze()
+        lit_gru.transformation = 'stationary'
         return lit_gru
-    
+
     else:
         return None
+
 
 def predict_statistical_model(model_name, stock, df):
     pass
 
 
+def get_dataset(df, input_size, output_size, transformation):
+    stationary_transform = True if transformation == 'stationary' else False
+    normalize = True if transformation == 'normalize' else False
+    if input_size == 1:
+        cols = ['Close']
+    else:
+        cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+    if output_size == 1:
+        target_cols = ['Close']
+    else:
+        target_cols = ['Open', 'High', 'Low', 'Close']
+
+    dataset = pdat(df, 30, cols=cols, target_cols=target_cols,
+                    stationary_transform=stationary_transform, normalize=normalize)
+    if input_size > 5:
+        create_features(dataset.dataframe)
+        dataset.columns = dataset.dataframe.columns.tolist()
+    dataset.apply_transform()
+
+
 def predict_ml_model(model_name, stock, df):
-    pass
+    model = load_ml_model(model_name)
+    dataset = get_dataset(df, model.input_size, model.output_size, model.transformation)
 
 
 def get_prediction(model, stock, df):
@@ -114,7 +148,6 @@ def main():
         if df is None:
             st.write('No data found')
         else:
-
             prediction = get_prediction(model, stock, df)
 
             st.plotly_chart(create_candlestick_chart(

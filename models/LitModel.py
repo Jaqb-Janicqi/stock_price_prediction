@@ -14,6 +14,7 @@ class LitModel(lit.LightningModule):
         self._wd = wd
         if save_hparams:
             self.save_hyperparameters()
+        self._transformation = None
 
     def forward(self, x) -> torch.Tensor:
         return self._model_instance(x)
@@ -78,3 +79,15 @@ class LitModel(lit.LightningModule):
     @property
     def input_size(self) -> int:
         return self._model_instance.input_size
+    
+    @property
+    def output_size(self) -> int:
+        return self._model_instance.output_size
+    
+    @property
+    def transformation(self) -> str:
+        return self._transformation
+    
+    @transformation.setter
+    def transformation(self, value) -> None:
+        self._transformation = value
