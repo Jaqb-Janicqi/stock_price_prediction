@@ -1,4 +1,5 @@
 import os
+import pickle
 import numpy as np
 import streamlit as st
 import pandas as pd
@@ -8,6 +9,8 @@ import plotly.graph_objs as go
 import time
 import datetime
 from data_handling.pandasDataSet import PandasDataset as pdat
+from models.ARIMA import ARIMA
+from models.RidgeRegression import RidgeRegression
 from models.GRU import GRU
 from models.LSTM_tower import LSTM_tower
 from models.LitModel import LitModel
@@ -75,55 +78,71 @@ def get_dataset(df, input_size, output_size, transformation):
     dataset = pdat(df, 30, cols=cols, target_cols=target_cols,
                    stationary_tranform=stationary_transform, normalize=normalize)
     if input_size > 5:
-        # print(dataset.dataframe.columns)
         create_features(dataset.dataframe)
         dataset.columns = dataset.dataframe.columns.tolist()
     dataset.apply_transform()
     return dataset
 
 
-def train_statistical_model(model_name, stock, df):
-    pass
+def train_arima(df):
+    model = ARIMA(p=5, d=1, q=0)
+    model.fit(df['Close'])
+    return model
 
 
-def load_statistical_model(model_name, stock, df):
-    m_dir = os.listdir(STATISTICAL_MODEL_DIR)
-    matching_models = [m for m in m_dir if model_name in m and stock in m]
-    if len(matching_models) == 0:
-        model = train_statistical_model(model_name, stock, df)
-    else:
-        model = None
+def train_arima_garch(df):
+    return None
+
+
+def train_ridge_regression(df):
+    df['Returns'] = (df['Close'].pct_change() * 100).round(2)
+    df.dropna(inplace=True)
+    model = RidgeRegression(alpha=1)
+    model.history = list(df['Returns'])
+    model.fit()
     return model
 
 
 def predict_statistical_model(model_name, stock, df):
-    model = load_statistical_model(model_name, stock, df)
-    pass
+    if model_name == 'ARIMA':
+        model = train_arima(df)
+        return model.predict(1)
+    elif model_name == 'ARIMA-GARCH':
+        model = train_arima_garch(df)
+        return model.predict(1)
+    elif model_name == 'RidgeRegression':
+        model = train_ridge_regression(df)
+        return df['Close'].iloc[-1] * (1 + model.predict() / 100)
+
+
+def load_gru():
+    gru = GRU(input_size=1, hidden_size=128, output_size=1, num_layers=4)
+    lit_gru = LitModel.load_from_checkpoint(
+        os.path.join(ML_MODEL_DIR, 'GRU_1_1_128_4_stationary'),
+        model=gru
+    )
+    lit_gru.model.eval()
+    lit_gru.transformation = 'stationary'
+    return lit_gru
+
+
+def load_lstm():
+    lstm_tower = LSTM_tower(input_size=61, output_size=4)
+    lit_lstm_tower = LitModel.load_from_checkpoint(
+        os.path.join(ML_MODEL_DIR, 'LSTM_tower_61_4_stationary'),
+        model=lstm_tower
+    )
+    lit_lstm_tower.model.eval()
+    lit_lstm_tower.transformation = 'stationary'
+    return lit_lstm_tower
 
 
 def load_ml_model(model_name):
     if model_name == 'LSTM':
-        lstm_tower = LSTM_tower(input_size=61, output_size=4)
-        lit_lstm_tower = LitModel.load_from_checkpoint(
-            os.path.join(ML_MODEL_DIR, 'LSTM_tower_61_4_stationary'),
-            model=lstm_tower
-        )
-        lit_lstm_tower.model.eval()
-        lit_lstm_tower.transformation = 'stationary'
-        return lit_lstm_tower
-
+        return load_lstm()
     elif model_name == 'GRU':
-        gru = GRU(input_size=1, hidden_size=128, output_size=1, num_layers=4)
-        lit_gru = LitModel.load_from_checkpoint(
-            os.path.join(ML_MODEL_DIR, 'GRU_1_1_128_4_stationary'),
-            model=gru
-        )
-        lit_gru.model.eval()
-        lit_gru.transformation = 'stationary'
-        return lit_gru
-
-    else:
-        return None
+        return load_gru()
+    return None
 
 
 def predict_ml_model(model_name, df):
@@ -144,14 +163,20 @@ def get_prediction(model, stock, df):
         return None
 
 
-def wrangle_ml_prediction(df, prediction: np.ndarray):
+def wrangle_prediction(df, prediction: np.ndarray):
     if prediction is None:
         return
     prediction = prediction.round(2)
-    if prediction.shape[1] == 1:
-        new_row = np.full(4, prediction[0][0])
-    else:
-        new_row = np.array(prediction[0][:])
+    try:
+        # hacky way to know if this is a statistical model that predicts close
+        # since shape access will throw an error
+        if prediction.shape[1] == 1:
+            new_row = np.full(4, prediction[0][0])
+        else:
+            new_row = np.array(prediction[0][:])
+    except:
+        new_row = np.full(4, prediction)
+
     n_index = [df.index[-1] + datetime.timedelta(hours=1)]
     predict_df = pd.DataFrame(
         [new_row], columns=['Open', 'High', 'Low', 'Close'], index=n_index)
@@ -191,7 +216,7 @@ def main():
         if df is None:
             st.write('No data found')
         else:
-            prediction = wrangle_ml_prediction(
+            prediction = wrangle_prediction(
                 df, get_prediction(model, stock, df.copy()))
 
             st.plotly_chart(create_candlestick_chart(
