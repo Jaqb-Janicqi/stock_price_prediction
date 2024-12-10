@@ -113,6 +113,15 @@ class PandasDataset(Dataset):
         self._cols = value
 
 
+    @property
+    def last_X(self):
+        return self.dataframe.iloc[len(self._dataframe) - self._window_size:][self._cols].values
+    
+    @property
+    def last_true_candle(self):
+        return self._original_dataframe.iloc[-1][self._target_cols].values
+
+
 class DistributedDataset(Dataset):
     def __init__(self, directory: str, window_size: int, normalize: bool = False,
                  stationary_transform: bool = False, cols=['Close'], target_cols=['Close'],
