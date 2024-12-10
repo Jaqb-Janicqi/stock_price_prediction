@@ -22,6 +22,8 @@ class LSTM_tower(nn.Module):
             nn.LSTM(256, 256, 1, batch_first=True)
         ])
         self._linear = nn.Linear(256, output_size)
+        self.input_size = input_size
+        self.output_size = output_size
 
     def forward(self, x) -> torch.Tensor:
         for layer in self._lstm_tower:

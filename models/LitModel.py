@@ -74,3 +74,7 @@ class LitModel(lit.LightningModule):
     @wd.setter
     def wd(self, value) -> None:
         self._wd = value
+
+    @property
+    def input_size(self) -> int:
+        return self._model_instance.input_size

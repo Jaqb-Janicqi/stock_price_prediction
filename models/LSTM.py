@@ -13,6 +13,10 @@ class LSTM(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, output_size)
         )
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.output_size = output_size
 
     def forward(self, x) -> torch.Tensor:
         h_0 = torch.zeros(self._lstm.num_layers, x.size(0), self._lstm.hidden_size, device=x.device)

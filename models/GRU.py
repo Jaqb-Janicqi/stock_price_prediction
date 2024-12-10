@@ -9,6 +9,10 @@ class GRU(nn.Module):
             input_size, hidden_size, num_layers, batch_first=True
         )
         self.fc = nn.Linear(hidden_size, output_size)
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.output_size = output_size
 
     def forward(self, x) -> torch.Tensor:
         h_0 = torch.zeros(self.gru.num_layers, x.size(0), self.gru.hidden_size, device=x.device)
