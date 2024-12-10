@@ -184,18 +184,17 @@ def wrangle_prediction(df, prediction: np.ndarray):
 
 
 def main():
-    st.title('Stock Price App')
+    st.title('Stock Price Forecasting')
     st.sidebar.title('Stock Selection')
 
     pretrained_list = ['AAPL', 'GOOGL', 'MSFT', 'GME', 'AMZN', 'TSLA', 'FB', 'NFLX',
                        'NVDA', 'INTC', 'APO', 'BIO', 'FERG', 'CMA', 'DXC', 'ETSY', 'TTD', 'VEEV']
     pretrained_list.sort()
     st.write()
-    selected_pretrained = st.sidebar.selectbox(
-        'Statistical models need to be fitted, before they can be used. You can select one of these stocks to use a pretrained model.', [''] + pretrained_list)
+    selected_pretrained = st.sidebar.selectbox('Select a stock from this list', [''] + pretrained_list)
 
     stock = st.sidebar.text_input(
-        'or enter a stock ticker. Statistical models will be trained automatically if selected. Each may take up to 10 minutes.')
+        'or enter a stock ticker', value='AAPL').upper()
 
     if selected_pretrained != '':
         stock = selected_pretrained
