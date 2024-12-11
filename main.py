@@ -1,7 +1,5 @@
-from setup import install_requirements
-from app import main
+from app import start_app_from_terminal
 
 
 if __name__ == '__main__':
-    install_requirements()
-    main()
+    start_app_from_terminal()
