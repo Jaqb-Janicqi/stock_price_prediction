@@ -241,8 +241,3 @@ def main():
 
 def start_app_from_terminal():
     subprocess.check_call([sys.executable, "-m", "streamlit", "run", "app.py"])
-
-
-if __name__ == '__main__':
-    install_requirements()
-    main()
