@@ -11,7 +11,5 @@ dependencies:
   - streamlit
   - ta-lib
   - yfinance
-  - pip
-  - pip:
-    - arch
+  - arch-py
 name: env
