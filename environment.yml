@@ -1,4 +1,4 @@
-name: test_thesis
+name: base
 channels:
   - pytorch
   - defaults
