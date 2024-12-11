@@ -4,17 +4,4 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - matplotlib
-  - numpy
-  - pandas
-  - plotly
-  - pytorch
-  - pytorch-lightning
-  - scikit-learn
-  - statsmodels
-  - streamlit
   - ta-lib
-  - torchaudio
-  - torchvision
-  - yfinance
-  - arch-py
