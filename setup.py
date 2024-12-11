@@ -101,8 +101,8 @@ def run_setup():
     # install requirements
     install_requirements()
 
-    # check if talib is installed and install if not
-    install_talib()
+    # # check if talib is installed and install if not
+    # install_talib()
 
 
 if __name__ == '__main__':
