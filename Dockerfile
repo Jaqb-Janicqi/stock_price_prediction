@@ -17,10 +17,10 @@ COPY environment.yml /app/environment.yml
 RUN micromamba create -n env -f environment.yml -y
 
 # Install the CPU-only version of PyTorch and related packages
-RUN /usr/local/bin/micromamba run -n env pip install torch==2.1.1 torchvision==0.16.1 torchaudio --index-url https://download.pytorch.org/whl/cpu
+# RUN /usr/local/bin/micromamba run -n env pip install torch==2.1.1 torchvision==0.16.1 torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 # Install pytorch-lightning
-RUN /usr/local/bin/micromamba run -n env pip install pytorch-lightning
+# RUN /usr/local/bin/micromamba run -n env pip install pytorch-lightning
 
 # Ensure the environment is activated
 RUN echo 'eval "$(micromamba shell hook --shell bash)"' >> /app/bash-profile && \

@@ -1,6 +1,7 @@
 channels:
   - defaults
   - conda-forge
+  - pytorch
 dependencies:
   - matplotlib
   - numpy
@@ -12,4 +13,6 @@ dependencies:
   - ta-lib
   - yfinance
   - arch-py
+  - pytorch
+  - pytorch-lightning
 name: env
