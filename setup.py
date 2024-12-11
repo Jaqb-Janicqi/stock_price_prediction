@@ -26,7 +26,9 @@ def install_talib():
             zip_ref.extractall(directory)
         subprocess.check_call(["pip", "install", os.path.join(directory, "TA_Lib-0.4.28-cp311-cp311-win_amd64.whl")])
     else:
-        subprocess.run(["wget", "http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz"])
+        url = "http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz"
+        import urllib.request
+        urllib.request.urlretrieve(url, "ta-lib-0.4.0-src.tar.gz")
         subprocess.run(["tar", "-xzf", "ta-lib-0.4.0-src.tar.gz"])
         os.chdir("ta-lib")
         subprocess.run(["./configure", "--prefix=/usr"])
