@@ -107,10 +107,10 @@ dependencies:
       - tenacity==9.0.0
       - threadpoolctl==3.5.0
       - toml==0.10.2
-      - torch==2.5.1+cu118
-      - torchaudio==2.5.1+cu118
+      - torch==2.5.1
+      - torchaudio==2.5.1
       - torchmetrics==1.5.2
-      - torchvision==0.20.1+cu118
+      - torchvision==0.20.1
       - tornado==6.4.2
       - tqdm==4.67.0
       - typing-extensions==4.12.2
