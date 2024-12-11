@@ -1,5 +1,7 @@
 import os
 import pickle
+import subprocess
+import sys
 import numpy as np
 import streamlit as st
 import pandas as pd
@@ -10,10 +12,15 @@ import time
 import datetime
 from data_handling.pandasDataSet import PandasDataset as pdat
 from models.ARIMA import ARIMA
+from models.ARIMA_GARCH import ARIMA_GARCH
 from models.RidgeRegression import RidgeRegression
 from models.GRU import GRU
 from models.LSTM_tower import LSTM_tower
 from models.LitModel import LitModel
+from setup import install_talib
+
+
+install_talib()
 
 # force cpu for torch
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
@@ -56,10 +63,17 @@ def create_candlestick_chart(df, prediction, ticker, start_date, end_date):
         low=prediction['Low'],
         close=prediction['Close'],
         name='Prediction',
-        increasing_line_color='#FFFFFF'.lower(),
-        decreasing_line_color='#FFFFFF'.lower()
+        increasing_line_color='#1c6be8'.lower(),
+        decreasing_line_color='#1c6be8'.lower()
     )
     fig = go.Figure(data=[candle_chart, higlight], layout=layout)
+    fig.show(config={'modeBarButtonsToAdd': ['drawline',
+                                             'drawopenpath',
+                                             'drawclosedpath',
+                                             'drawcircle',
+                                             'drawrect',
+                                             'eraseshape'
+                                             ]})
     return fig
 
 
@@ -91,7 +105,9 @@ def train_arima(df):
 
 
 def train_arima_garch(df):
-    return None
+    model = ARIMA_GARCH(p=5, d=1, q=0, p_garch=1, q_garch=1)
+    model.fit(df['Close'])
+    return model
 
 
 def train_ridge_regression(df):
@@ -191,7 +207,8 @@ def main():
                        'NVDA', 'INTC', 'APO', 'BIO', 'FERG', 'CMA', 'DXC', 'ETSY', 'TTD', 'VEEV']
     pretrained_list.sort()
     st.write()
-    selected_pretrained = st.sidebar.selectbox('Select a stock from this list', [''] + pretrained_list)
+    selected_pretrained = st.sidebar.selectbox(
+        'Select a stock from this list', [''] + pretrained_list)
 
     stock = st.sidebar.text_input(
         'or enter a stock ticker', value='AAPL').upper()
@@ -222,5 +239,5 @@ def main():
                 df, prediction, stock, start_date, end_date), use_container_width=True)
 
 
-if __name__ == '__main__':
-    main()
+def start_app_from_terminal():
+    subprocess.check_call([sys.executable, "-m", "streamlit", "run", "app.py"])
