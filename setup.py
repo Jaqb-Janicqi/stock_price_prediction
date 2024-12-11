@@ -13,7 +13,7 @@ def install_talib():
 
     os_version = sys.platform
     # check if linux or unix
-    if os_version.startswith('linux'):
+    if not os_version.startswith('linux'):
         import requests
         subprocess.check_call(["pip", "debug", "--verbose"])
         directory = 'talib'
