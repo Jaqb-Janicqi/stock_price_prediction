@@ -46,12 +46,20 @@ def linux_install():
     #     "sudo apt upgrade -y",
     #     "pip install ta-lib"
     # ]
+    try:
+        subprocess.run(["pip", "install", "ta-lib"])
+        return
+    except:
+        pass
+
+    url = "http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz"
+    import urllib.request
+    urllib.request.urlretrieve(url, "ta-lib-0.4.0-src.tar.gz")
     commands = [
         "sudo apt-get update",
         "sudo apt-get install -y build-essential",
         "sudo apt-get install -y python3-dev",
         "sudo pip install -U setuptools",
-        "wget https://mrjbq7.github.io/ta-lib/install.html -O ta-lib-0.4.0-src.tar.gz",
         "tar -xvf ta-lib-0.4.0-src.tar.gz",
         "cd ta-lib && ./configure --prefix=/usr && make && sudo make install && sudo apt upgrade -y && pip install ta-lib"
     ]
