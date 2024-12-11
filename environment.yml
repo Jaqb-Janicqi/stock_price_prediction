@@ -278,6 +278,7 @@ dependencies:
   - xorg-libxdmcp=1.1.5
   - xz=5.4.6
   - yaml=0.2.5
+  - yaml-cpp=0.8.0
   - yfinance=0.2.50
   - zeromq=4.3.5
   - zlib=1.3.1
