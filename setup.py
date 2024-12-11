@@ -47,7 +47,7 @@ def linux_install():
         "pip install ta-lib"
     ]
     for command in commands:
-        subprocess.check_call(command, shell=True)
+        subprocess.check_call(command.split(), shell=True)
 
 
 def install_talib():
