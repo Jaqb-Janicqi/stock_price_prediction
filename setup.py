@@ -46,9 +46,17 @@ def linux_install():
     #     "sudo apt upgrade -y",
     #     "pip install ta-lib"
     # ]
-    # for command in commands:
-    #     subprocess.run(command, shell=True)
-    subprocess.run("conda install -c conda-forge ta-lib", shell=True)
+    commands = [
+        "sudo apt-get update",
+        "sudo apt-get install -y build-essential",
+        "sudo apt-get install -y python3-dev",
+        "sudo pip install -U setuptools",
+        "wget https://mrjbq7.github.io/ta-lib/install.html -O ta-lib-0.4.0-src.tar.gz",
+        "tar -xvf ta-lib-0.4.0-src.tar.gz",
+        "cd ta-lib && ./configure --prefix=/usr && make && sudo make install && sudo apt upgrade -y && pip install ta-lib"
+    ]
+    for command in commands:
+        subprocess.run(command, shell=True)
 
 
 def install_talib():
