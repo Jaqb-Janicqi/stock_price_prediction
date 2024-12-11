@@ -106,4 +106,5 @@ def run_setup():
 
 
 if __name__ == '__main__':
-    run_setup()
+    # run_setup()
+    pass
