@@ -17,10 +17,8 @@ from models.RidgeRegression import RidgeRegression
 from models.GRU import GRU
 from models.LSTM_tower import LSTM_tower
 from models.LitModel import LitModel
-from setup import install_requirements, install_talib
 
 
-install_talib()
 
 # force cpu for torch
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
