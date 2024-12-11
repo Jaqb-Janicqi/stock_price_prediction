@@ -26,10 +26,14 @@ def install_talib():
             zip_ref.extractall(directory)
         subprocess.check_call(["pip", "install", os.path.join(directory, "TA_Lib-0.4.28-cp311-cp311-win_amd64.whl")])
     else:
-        # https://www.wheelodex.org/projects/talib-binary/wheels/talib_binary-0.4.19-cp37-cp37m-manylinux1_x86_64.whl/
-        url = 'https://files.pythonhosted.org/packages/00/61/a68a9276a3c166df8717927780d994496ee4cb5299903a409f93689a2b4e/talib_binary-0.4.19-cp37-cp37m-manylinux1_x86_64.whl'
-        subprocess.check_call(["pip", "install", url])
-    
+        subprocess.run(["wget", "http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz"])
+        subprocess.run(["tar", "-xzf", "ta-lib-0.4.0-src.tar.gz"])
+        os.chdir("ta-lib")
+        subprocess.run(["./configure", "--prefix=/usr"])
+        subprocess.run(["make"])
+        subprocess.run(["sudo", "make", "install"])
+        subprocess.run([sys.executable, "-m", "pip", "install", "ta-lib"])
+        
     # check if talib is installed properly
     try:
         import talib
