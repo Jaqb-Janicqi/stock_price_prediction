@@ -33,7 +33,7 @@ STATISTICAL_MODEL_DIR = 'trained_statistical'
 LIGHT_COLORS = [
     "#ADD8E6",  # Light Blue
     "#F08080",  # Light Coral
-    "#E6E6FA",  # Lavender
+    "#B44FFF",  # Lavender
     "#FFE4B5",  # Moccasin
     "#98FB98"   # Pale Green
 ]
