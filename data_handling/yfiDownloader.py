@@ -28,6 +28,11 @@ def download_ticker(ticker_name: str, interval: str, cols=['Close']) -> pd.DataF
                 if item.isdigit():
                     start = today - timedelta(days=int(item) - 1)
 
+        # ticker not listed
+        error_message = yf.shared._ERRORS.get(ticker_name, None)
+        if error_message is not None:
+            return None
+
     data.columns = cols
     print(f'Downloaded {len(data)} rows for {ticker_name}')
     return data
@@ -81,10 +86,9 @@ def download_worker(ticker: str, interval: str, split: bool = False, cols=['Clos
         print(f'Error downloading {ticker}: {e}')
 
 
-
 def get_sp500_ticker_names() -> list:
     sp500 = pd.read_html(
-    'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+        'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
     return sp500['Symbol'].to_list()
 
 

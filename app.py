@@ -237,21 +237,21 @@ def forecast_all(stock, f_range, start_date, end_date) -> tuple:
     df = download_ticker(stock, '1h', cols=[
         'Open', 'High', 'Low', 'Close', 'Volume'])
     if df is None:
-        st.write('No data found')
-    else:
-        # ensure there is enough data to calculate all indicators
-        df = df.loc[start_date - datetime.timedelta(days=60):end_date]
-        predictions = {}
-        for model in STATISTICAL_MODELS + ML_MODELS:
-            predictions[model] = get_prediction(model, stock, df, f_range)[1:]
-            for col in predictions[model].columns:
-                if predictions[model][col].isnull().values.any():
-                    predictions[model][col] = predictions[model]['Close']
+        return None, None
 
-            predictions[model]['Low'] = predictions[model][['Open', 'High', 'Low', 'Close']].min(
-                axis=1)
-            predictions[model]['High'] = predictions[model][['Open', 'High', 'Low', 'Close']].max(
-                axis=1)
+    # ensure there is enough data to calculate all indicators
+    df = df.loc[start_date - datetime.timedelta(days=60):end_date]
+    predictions = {}
+    for model in STATISTICAL_MODELS + ML_MODELS:
+        predictions[model] = get_prediction(model, stock, df, f_range)[1:]
+        for col in predictions[model].columns:
+            if predictions[model][col].isnull().values.any():
+                predictions[model][col] = predictions[model]['Close']
+
+        predictions[model]['Low'] = predictions[model][['Open', 'High', 'Low', 'Close']].min(
+            axis=1)
+        predictions[model]['High'] = predictions[model][['Open', 'High', 'Low', 'Close']].max(
+            axis=1)
     return df, predictions
 
 
@@ -316,12 +316,15 @@ def main():
             start_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
         end_date_dt = datetime.datetime.strptime(
             end_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+
         df, predictions = forecast_all(
             stock, f_range, start_date_dt, end_date_dt)
-        
+        if df is None:
+            st.write('Ticker not found')
+            return
+
         zoom_fig = create_candlestick_chart(df, predictions, stock, zoom=True)
         st.plotly_chart(zoom_fig, use_container_width=True, theme=None)
-        
 
         fig = create_candlestick_chart(df, predictions, stock)
         st.plotly_chart(fig, use_container_width=True,
