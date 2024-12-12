@@ -300,6 +300,12 @@ def main():
     if end_date > datetime.datetime.now().strftime('%Y-%m-%d'):
         end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
+    min_start = (datetime.datetime.now() -
+                 datetime.timedelta(days=729)).strftime('%Y-%m-%d')
+    if start_date < min_start:
+        st.write('Start date must be within the last 2 years')
+        return
+
     chart_config = {
         'modeBarButtonsToAdd': [
             'drawline',
