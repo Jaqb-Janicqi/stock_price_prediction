@@ -277,20 +277,20 @@ def main():
 
     f_range = st.sidebar.slider('Forecast range', 1, 30, 5, 1)
 
+    st.sidebar.write('')
+
+    default_start = (datetime.datetime.now() - datetime.timedelta(days=60)).strftime('%Y-%m-%d')
+    default_end = datetime.datetime.now().strftime('%Y-%m-%d')
+
+    start_date = st.sidebar.text_input('Start Date', default_start)
+    end_date = st.sidebar.text_input('End Date', default_end)
+
     if selected_pretrained != '':
         stock = selected_pretrained
     else:
         if stock == '':
             st.write('Please enter a stock ticker')
             return
-
-    st.sidebar.write('')
-    
-    default_start = (datetime.datetime.now() - datetime.timedelta(days=60)).strftime('%Y-%m-%d')
-    default_end = datetime.datetime.now().strftime('%Y-%m-%d')
-
-    start_date = st.sidebar.text_input('Start Date', default_start)
-    end_date = st.sidebar.text_input('End Date', default_end)
 
     if start_date == '' or end_date == '':
         st.write('Please enter a start and end date')
@@ -303,8 +303,6 @@ def main():
         return
     if end_date > datetime.datetime.now().strftime('%Y-%m-%d'):
         end_date = datetime.datetime.now().strftime('%Y-%m-%d')
-
-
 
     if 'small_chart' not in st.session_state:
         st.session_state.small_chart = False
