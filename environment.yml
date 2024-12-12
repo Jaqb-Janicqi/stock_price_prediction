@@ -1,0 +1,17 @@
+channels:
+  - pytorch
+  - defaults
+  - conda-forge
+dependencies:
+  - matplotlib
+  - numpy
+  - pandas
+  - plotly
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-lightning
+  - scikit-learn
+  - statsmodels
+  - streamlit
+  - ta-lib

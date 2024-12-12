@@ -17,7 +17,7 @@ from models.RidgeRegression import RidgeRegression
 from models.GRU import GRU
 from models.LSTM_tower import LSTM_tower
 from models.LitModel import LitModel
-from setup import install_talib
+from setup import install_requirements, install_talib
 
 
 install_talib()
@@ -241,3 +241,7 @@ def main():
 
 def start_app_from_terminal():
     subprocess.check_call([sys.executable, "-m", "streamlit", "run", "app.py"])
+
+
+if __name__ == '__main__':
+    main()
