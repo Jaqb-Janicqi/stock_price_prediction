@@ -18,8 +18,6 @@ arima_garch_data = load_last_30_points(arima_garch_file)
 lstm_data = load_last_30_points(lstm_file)
 gru_data = load_last_30_points(gru_file)
 
-
-# true_price = lstm_data['y'].values 
 true_price = arima_garch_data['Actual'].values
 lstm_predicted = lstm_data['pred'].values
 
@@ -30,22 +28,15 @@ mse_arima = ((true_price - arima_garch_predicted) ** 2).mean()
 mse_lstm = ((true_price - lstm_predicted) ** 2).mean()
 print('MSE ARIMA-GARCH:', mse_arima)
 print('MSE LSTM:', mse_lstm)
-# calculate prediction in reverse order
-# tmp = []
-# idx = len(gru_predicted) - 1
-# while len(tmp) < 30:
-#     tmp.append(float(true_price[idx-1]) + float(gru_predicted[idx-1]) * float(true_price[idx-1]))
-#     idx -= 1
-# gru_predicted = tmp[::-1]
 
 plt.figure(figsize=(12, 6))
 
 plt.plot(range(len(true_price)), true_price, label='True price', color='blue')
-plt.plot(range(len(arima_garch_predicted)), arima_garch_predicted, label='ARIMA-GARCH Predicted', color='purple', linestyle='--')
+plt.plot(range(len(arima_garch_predicted)), arima_garch_predicted, label='ARIMA-GARCH Predicted', color='purple', linestyle='-.')
 plt.plot(range(len(lstm_predicted)), lstm_predicted, label='LSTM Predicted', color='green', linestyle='-')
 plt.plot(range(len(gru_predicted)), gru_predicted, label='GRU Predicted', color='red', linestyle=':')
 
-plt.title('Visualization of selected models on DXC stock')
+plt.title('Visualization of selected models on APO stock')
 plt.xlabel('Time Steps (Last 30 Points)')
 plt.ylabel('Stock Price')
 plt.legend()
