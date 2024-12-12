@@ -33,7 +33,7 @@ STATISTICAL_MODEL_DIR = 'trained_statistical'
 LIGHT_COLORS = [
     "#ADD8E6",  # Light Blue
     "#F08080",  # Light Coral
-    "#E6E6FA",  # Lavender
+    "#B44FFF",  # Lavender
     "#FFE4B5",  # Moccasin
     "#98FB98"   # Pale Green
 ]
@@ -53,12 +53,13 @@ def create_features(df: pd.DataFrame) -> None:
     indicators.add_moving_averages(df)
 
 
-def create_candlestick_chart(df: pd.DataFrame, predictions: dict, ticker: str, plot=False) -> go.Figure:
+def create_candlestick_chart(df: pd.DataFrame, predictions: dict, ticker: str, zoom=False) -> go.Figure:
     charts = []
-    weekback = datetime.datetime.strptime(
-        (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'), '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)  # TODO simplify
-
-    tmp_df = df.loc[weekback:]
+    if zoom:
+        zoom_dist = df.index[-1] - datetime.timedelta(days=4)
+        tmp_df = df.loc[zoom_dist:]
+    else:
+        tmp_df = df
     charts.append(go.Candlestick(
         x=tmp_df.index,
         open=tmp_df['Open'],
@@ -68,8 +69,12 @@ def create_candlestick_chart(df: pd.DataFrame, predictions: dict, ticker: str, p
         name='Stock Price'
     ))
 
+    title = f'{ticker} Stock Price'
+    if zoom:
+        title += ' (Zoomed)'
+
     layout = go.Layout(
-        title=f'{ticker} Stock Price',
+        title=title,
         xaxis_title='Date',
         yaxis_title='Price',
         xaxis_rangeslider_visible=False,
@@ -87,17 +92,7 @@ def create_candlestick_chart(df: pd.DataFrame, predictions: dict, ticker: str, p
             decreasing_line_color=DARK_COLORS[idx % len(DARK_COLORS)]
         ))
 
-    fig = go.Figure(data=charts, layout=layout)
-    if plot:
-        fig.show(config={'modeBarButtonsToAdd': [
-            'drawline',
-            'drawopenpath',
-            'drawclosedpath',
-            'drawcircle',
-            'drawrect',
-            'eraseshape'
-        ]})
-    return fig
+    return go.Figure(data=charts, layout=layout)
 
 
 def get_dataset(df, input_size, output_size, transformation) -> pdat:
@@ -242,21 +237,21 @@ def forecast_all(stock, f_range, start_date, end_date) -> tuple:
     df = download_ticker(stock, '1h', cols=[
         'Open', 'High', 'Low', 'Close', 'Volume'])
     if df is None:
-        st.write('No data found')
-    else:
-        # ensure there is enough data to calculate all indicators
-        df = df.loc[start_date - datetime.timedelta(days=60):end_date]
-        predictions = {}
-        for model in STATISTICAL_MODELS + ML_MODELS:
-            predictions[model] = get_prediction(model, stock, df, f_range)[1:]
-            for col in predictions[model].columns:
-                if predictions[model][col].isnull().values.any():
-                    predictions[model][col] = predictions[model]['Close']
+        return None, None
 
-            predictions[model]['Low'] = predictions[model][['Open', 'High', 'Low', 'Close']].min(
-                axis=1)
-            predictions[model]['High'] = predictions[model][['Open', 'High', 'Low', 'Close']].max(
-                axis=1)
+    # ensure there is enough data to calculate all indicators
+    df = df.loc[start_date - datetime.timedelta(days=60):end_date]
+    predictions = {}
+    for model in STATISTICAL_MODELS + ML_MODELS:
+        predictions[model] = get_prediction(model, stock, df, f_range)[1:]
+        for col in predictions[model].columns:
+            if predictions[model][col].isnull().values.any():
+                predictions[model][col] = predictions[model]['Close']
+
+        predictions[model]['Low'] = predictions[model][['Open', 'High', 'Low', 'Close']].min(
+            axis=1)
+        predictions[model]['High'] = predictions[model][['Open', 'High', 'Low', 'Close']].max(
+            axis=1)
     return df, predictions
 
 
@@ -279,7 +274,8 @@ def main():
 
     st.sidebar.write('')
 
-    default_start = (datetime.datetime.now() - datetime.timedelta(days=60)).strftime('%Y-%m-%d')
+    default_start = (datetime.datetime.now() -
+                     datetime.timedelta(days=60)).strftime('%Y-%m-%d')
     default_end = datetime.datetime.now().strftime('%Y-%m-%d')
 
     start_date = st.sidebar.text_input('Start Date', default_start)
@@ -304,34 +300,41 @@ def main():
     if end_date > datetime.datetime.now().strftime('%Y-%m-%d'):
         end_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    if 'small_chart' not in st.session_state:
-        st.session_state.small_chart = False
+    min_start = (datetime.datetime.now() -
+                 datetime.timedelta(days=729)).strftime('%Y-%m-%d')
+    if start_date < min_start:
+        st.write('Start date must be within the last 2 years')
+        return
 
-    if st.sidebar.button('Forecast') or st.session_state.small_chart:
-        print('here')
+    chart_config = {
+        'modeBarButtonsToAdd': [
+            'drawline',
+            'drawopenpath',
+            'drawclosedpath',
+            'drawcircle',
+            'drawrect',
+            'eraseshape'
+        ]
+    }
+
+    if st.sidebar.button('Forecast'):
         start_date_dt = datetime.datetime.strptime(
             start_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
         end_date_dt = datetime.datetime.strptime(
             end_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+
         df, predictions = forecast_all(
             stock, f_range, start_date_dt, end_date_dt)
+        if df is None:
+            st.write('Ticker not found')
+            return
 
-        if 'small_chart' not in st.session_state:
-            st.session_state.small_chart = False
+        zoom_fig = create_candlestick_chart(df, predictions, stock, zoom=True)
+        st.plotly_chart(zoom_fig, use_container_width=True, theme=None)
 
-        if not st.session_state.small_chart:
-            st.plotly_chart(create_candlestick_chart(
-                df, predictions, stock), use_container_width=True, key='small_chart')
-            st.session_state.small_chart = True
-        else:
-            print('small chart')
-            st.plotly_chart(create_candlestick_chart(
-                df, predictions, stock, True), use_container_width=True, key='full_chart')
-
-        if st.button('Full chart'):
-            st.session_state.small_chart = not st.session_state.small_chart
-    else:
-        st.session_state.small_chart = False
+        fig = create_candlestick_chart(df, predictions, stock)
+        st.plotly_chart(fig, use_container_width=True,
+                        theme=None, config=chart_config)
 
 
 def start_app_from_terminal():
