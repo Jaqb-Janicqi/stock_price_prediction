@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def load_last_30_points(filepath):
     data = pd.read_csv(filepath)
-    return data.tail(60)
+    return data.tail(30)
 
 DATA_PATH = os.getcwd()
 results_directory = 'results\\'
@@ -19,7 +19,8 @@ lstm_data = load_last_30_points(lstm_file)
 gru_data = load_last_30_points(gru_file)
 
 
-true_price = lstm_data['y'].values 
+# true_price = lstm_data['y'].values 
+true_price = arima_garch_data['Actual'].values
 lstm_predicted = lstm_data['pred'].values
 
 gru_predicted = gru_data['pred'].values
@@ -41,8 +42,8 @@ plt.figure(figsize=(12, 6))
 
 plt.plot(range(len(true_price)), true_price, label='True price', color='blue')
 plt.plot(range(len(arima_garch_predicted)), arima_garch_predicted, label='ARIMA-GARCH Predicted', color='purple', linestyle='--')
-plt.plot(range(len(lstm_predicted)), lstm_predicted, label='LSTM Predicted', color='green', linestyle='--')
-plt.plot(range(len(gru_predicted)), gru_predicted, label='GRU Predicted', color='red', linestyle='--')
+plt.plot(range(len(lstm_predicted)), lstm_predicted, label='LSTM Predicted', color='green', linestyle='-')
+plt.plot(range(len(gru_predicted)), gru_predicted, label='GRU Predicted', color='red', linestyle=':')
 
 plt.title('Visualization of selected models on DXC stock')
 plt.xlabel('Time Steps (Last 30 Points)')
