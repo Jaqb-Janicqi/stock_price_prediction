@@ -1,0 +1,13 @@
+matplotlib
+numpy
+pandas
+plotly
+torch
+pytorch-lightning
+scikit-learn
+statsmodels
+streamlit
+torchaudio
+torchvision
+yfinance
+arch
