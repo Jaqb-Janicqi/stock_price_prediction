@@ -18,7 +18,6 @@ if torch.cuda.is_available():
 import pytorch_lightning as lit
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
-import xgboost as xgb
 
 from sklearn.metrics import mean_squared_error
 

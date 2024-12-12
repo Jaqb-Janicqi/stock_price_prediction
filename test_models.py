@@ -218,7 +218,7 @@ def create_features(df: pd.DataFrame) -> None:
 
 
 def evaluate_best_models():
-    best_path = 'best'
+    best_path = 'best_ml_models'
     # load models
     gru = GRU(input_size=1, hidden_size=128, output_size=1, num_layers=4)
     lit_gru = LitModel.load_from_checkpoint(
@@ -251,6 +251,14 @@ def evaluate_best_models():
         )
         dataset_gru.apply_transform()
         dataset_gru.dataframe = dataset_gru.dataframe[int(0.7*len(df)):]
+        orig_df = pd.read_csv(os.path.join(data_path, file))[['Close']]
+        orig_dset_gru = PandasDataset(
+            orig_df,
+            window_size=30,
+            cols=['Close'],
+            target_cols=['Close']
+        )
+        orig_dset_gru.dataframe = orig_dset_gru.dataframe[-len(dataset_gru.dataframe):]
 
 
         df = pd.read_csv(os.path.join(data_path, file))[['Open', 'High', 'Low', 'Close', 'Volume']]
@@ -265,11 +273,20 @@ def evaluate_best_models():
         dataset_lstm_tower.apply_transform()
         dataset_lstm_tower.columns = dataset_lstm_tower.dataframe.columns.tolist()
         dataset_lstm_tower.dataframe = dataset_lstm_tower.dataframe[int(0.7*len(df)):]
+        orig_df = pd.read_csv(os.path.join(data_path, file))[['Open', 'High', 'Low', 'Close', 'Volume']]
+        orig_dset_lstm = PandasDataset(
+            orig_df,
+            window_size=30,
+            cols=['Open', 'High', 'Low', 'Close', 'Volume'],
+            target_cols=['Open', 'High', 'Low', 'Close'],
+            stationary_tranform=True
+        )
+        orig_dset_lstm.dataframe = orig_dset_lstm.dataframe[-len(dataset_lstm_tower.dataframe):]
 
         gru_y, gru_pred = [], []
         for idx in range(len(dataset_gru)):
             x, y = dataset_gru[idx]
-            x_source, y_source = dataset_gru.get_original_data(idx)
+            x_source, y_source = orig_dset_gru[idx]
             x_source = x_source[-1]
             y_hat = lit_gru(torch.tensor(x).unsqueeze(0).float()).cpu().detach().numpy()
             y_pred = x_source + x_source * y_hat
@@ -286,7 +303,7 @@ def evaluate_best_models():
         lstm_tower_y, lstm_tower_y_pred = [], []
         for idx in range(len(dataset_lstm_tower)):
             x, y = dataset_lstm_tower[idx]
-            x_source, y_source = dataset_lstm_tower.get_original_data(idx)
+            x_source, y_source = orig_dset_lstm[idx]
             x_source = x_source[-1][-2]
             y_hat = lit_lstm_tower(torch.tensor(x).unsqueeze(0).float()).cpu().detach().numpy()
             y_pred = x_source + x_source * y_hat[0][-1]
