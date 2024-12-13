@@ -255,8 +255,13 @@ def forecast_all(stock, f_range, start_date, end_date) -> tuple:
     return df, predictions
 
 
+def set_page_wide():
+    st.set_page_config(layout='wide')
+
+
 def main():
     df, predictions, stock = None, None, None
+    set_page_wide()
     st.title('Stock Price Forecasting')
     st.sidebar.title('Stock Selection')
 
@@ -287,6 +292,20 @@ def main():
         if stock == '':
             st.write('Please enter a stock ticker')
             return
+        
+    try:
+        start_date_dt = datetime.datetime.strptime(
+            start_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+    except:
+        st.write('Please enter a valid start date')
+        return
+    
+    try:
+        end_date_dt = datetime.datetime.strptime(
+            end_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+    except:
+        st.write('Please enter a valid end date')
+        return
 
     if start_date == '' or end_date == '':
         st.write('Please enter a start and end date')
@@ -303,7 +322,7 @@ def main():
     min_start = (datetime.datetime.now() -
                  datetime.timedelta(days=729)).strftime('%Y-%m-%d')
     if start_date < min_start:
-        st.write('Start date must be within the last 2 years')
+        st.write(f'Start date must be within the last 729 days. Proposed start date: {min_start}')
         return
 
     chart_config = {
