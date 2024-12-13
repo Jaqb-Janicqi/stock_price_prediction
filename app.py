@@ -255,8 +255,13 @@ def forecast_all(stock, f_range, start_date, end_date) -> tuple:
     return df, predictions
 
 
+def set_page_wide():
+    st.set_page_config(layout='wide')
+
+
 def main():
     df, predictions, stock = None, None, None
+    set_page_wide()
     st.title('Stock Price Forecasting')
     st.sidebar.title('Stock Selection')
 
