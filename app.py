@@ -292,6 +292,20 @@ def main():
         if stock == '':
             st.write('Please enter a stock ticker')
             return
+        
+    try:
+        start_date_dt = datetime.datetime.strptime(
+            start_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+    except:
+        st.write('Please enter a valid start date')
+        return
+    
+    try:
+        end_date_dt = datetime.datetime.strptime(
+            end_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc)
+    except:
+        st.write('Please enter a valid end date')
+        return
 
     if start_date == '' or end_date == '':
         st.write('Please enter a start and end date')
