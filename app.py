@@ -322,7 +322,7 @@ def main():
     min_start = (datetime.datetime.now() -
                  datetime.timedelta(days=729)).strftime('%Y-%m-%d')
     if start_date < min_start:
-        st.write('Start date must be within the last 2 years')
+        st.write(f'Start date must be within the last 729 days. Proposed start date: {min_start}')
         return
 
     chart_config = {
